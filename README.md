@@ -1,80 +1,75 @@
-<!--
-SPDX-License-Identifier: CC-BY-SA-4.0
-SPDX-FileCopyrightText: 2024 Andrew Shark <ashark@linuxcomp.ru>
--->
+[update-readmes]   Mode: rewrite — migrating to template structure...
+# kde-builder
 
-# KDE Builder
+[![Built with Ona](https://ona.com/build-with-ona.svg)](https://app.ona.com/#https://github.com/Interested-Deving-1896/kde-builder)
 
-This tool streamlines the process of setting up and maintaining a development environment for KDE software.
+<!-- AI:start:what-it-does -->
+_Description pending._
+<!-- AI:end:what-it-does -->
 
-It does this by automating the process of downloading source code from the
-KDE source code repositories, building that source code, and installing it
-to your local system.
+## Architecture
 
-**kde-builder** downloads and used data from special repository [**repo-metadata**](https://invent.kde.org/sysadmin/repo-metadata).  
-It contains KDE Projects database, names of branches to checkout for each project, build configs (default cmake options)
-for projects, and some other data.  
+<!-- AI:start:architecture -->
+_Architecture documentation pending._
+<!-- AI:end:architecture -->
 
-**kde-builder** is a successor of a previously used tool called [**kdesrc-build**](https://invent.kde.org/sdk/kdesrc-build).  
-The predecessor project was written in Perl, and this was a significant barrier for new contributions.  
-The successor project is written in Python - a much more acknowledged language. This means that newly wanted features can be implemented with ease.  
+## Install
 
-## Basic Usage
-
-Before installing, configure your PATH environment variable to include the `~/.local/bin` path - the location where kde-builder will be installed.
-See [documentation page](https://kde-builder.kde.org/en/getting-started/before-building.html) for more information.
-
-Installation:
+<!-- Add installation instructions here. This section is yours — the AI will not modify it. -->
 
 ```bash
-cd ~
-curl 'https://invent.kde.org/sdk/kde-builder/-/raw/master/scripts/initial_setup.sh?ref_type=heads' > initial_setup.sh
-bash initial_setup.sh
+git clone https://github.com/Interested-Deving-1896/kde-builder.git
+cd kde-builder
 ```
 
-Initial setup:
+## Usage
 
-```bash
-kde-builder --generate-config
-kde-builder --install-distro-packages
+<!-- Add usage examples here. This section is yours — the AI will not modify it. -->
+
+## Configuration
+
+<!-- Document configuration options here. This section is yours — the AI will not modify it. -->
+
+## CI
+
+<!-- AI:start:ci -->
+_CI documentation pending._
+<!-- AI:end:ci -->
+
+## Mirror chain
+
+<!-- AI:start:mirror-chain -->
+This repo is maintained in [`Interested-Deving-1896/kde-builder`](https://github.com/Interested-Deving-1896/kde-builder) and mirrored through:
+
+```
+Interested-Deving-1896/kde-builder  ──►  OpenOS-Project-OSP/kde-builder  ──►  OpenOS-Project-Ecosystem-OOC/kde-builder
 ```
 
-Observe the build plan:
+Changes flow downstream automatically via the hourly mirror chain in
+[`fork-sync-all`](https://github.com/Interested-Deving-1896/fork-sync-all).
+Direct commits to OSP or OOC are detected and opened as PRs back to `Interested-Deving-1896`.
+<!-- AI:end:mirror-chain -->
 
-```bash
-kde-builder --pretend kcalc
-```
+## Contributors
 
-Build a project and its dependencies:
+<!-- AI:start:contributors -->
+_Contributors pending._
+<!-- AI:end:contributors -->
 
-```bash
-kde-builder kcalc
-```
+## Origins
 
-Rebuild only a single project without updating the source code:
+<!-- AI:start:origins -->
+_Original project — no upstream fork._
+<!-- AI:end:origins -->
 
-```bash
-kde-builder --no-include-dependencies --no-src kcalc
-```
+## Resources
 
-Launch the binary for a project using the development environment:
+<!-- AI:start:resources -->
+_No additional resource files found._
+<!-- AI:end:resources -->
 
-```bash
-kde-builder --run kcalc
-```
+## License
 
-Build a specific project while skipping certain projects:
-
-```bash
-kde-builder kcalc --ignore-projects kxmlgui
-```
-
-## Documentation
-
-For more details, consult the project documentation at https://kde-builder.kde.org/.
-
-Shortcuts to some pages:
-
-- [Installation and initial setup steps](https://kde-builder.kde.org/en//getting-started/before-building.html#initial-setup-of-kde-builder)
-- [List of supported configuration options](https://kde-builder.kde.org/en/configuration/conf-options-table.html)
-- [Supported command line parameters](https://kde-builder.kde.org/en/cmdline/supported-cmdline-params.html)
+<!-- AI:start:license -->
+<!-- License not detected — add a LICENSE file to this repo. -->
+<!-- AI:end:license -->
