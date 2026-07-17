@@ -549,14 +549,17 @@ class DependencyResolver:
         self._run_dependency_vote()
         return
 
-    def _descend_module_graph(self, callback, node_info, context) -> None:
+    def _descend_module_graph(self, mode: str, node_info, context) -> None:
         module_graph = self.dependency_graph
         depth = node_info["depth"]
         current_item = node_info["current_item"]
         current_branch = node_info["current_branch"]
 
         sub_graph = module_graph[current_item]
-        callback(node_info, sub_graph["module"], context)
+        if mode == "tree":
+            self._yield_module_dependency_tree_entry(node_info, sub_graph["module"], context)
+        else:
+            self._yield_module_dependency_tree_entry_full_path(node_info, sub_graph["module"], context)
 
         depth += 1
 
@@ -578,13 +581,19 @@ class DependencyResolver:
                 "parent_item": current_item,
                 "parent_branch": current_branch
             }
-            self._descend_module_graph(callback, item_info, context)
+            self._descend_module_graph(mode, item_info, context)
             item_index += 1
 
-    def walk_module_dependency_trees(self, callback: Callable, context: dict, modules: list[Module]) -> None:
+    def walk_module_dependency_trees(self, mode: str, modules: list[Module]) -> None:
         module_graph = self.dependency_graph
         item_count = len(modules)
         item_index = 1
+
+        context = {
+            "stack": [""],
+            "depth": 0,
+            "report": lambda *args: print(*args, sep="", end="\n")
+        }
 
         for module in modules:
             item = module.name
@@ -600,7 +609,7 @@ class DependencyResolver:
                 "parent_item": "",
                 "parent_branch": ""
             }
-            self._descend_module_graph(callback, info, context)
+            self._descend_module_graph(mode, info, context)
             item_index += 1
 
     def make_comparison_func(self) -> Callable:
@@ -675,3 +684,56 @@ class DependencyResolver:
         if ref_type == "branch":
             return ref_value
         return None
+
+    @staticmethod
+    def _yield_module_dependency_tree_entry(node_info: dict, module: Module, context: dict) -> None:
+        depth = node_info["depth"]
+        index = node_info["idx"]
+        count = node_info["count"]
+        build = node_info["build"]
+        current_item = node_info["current_item"]
+        current_branch = node_info["current_branch"]
+
+        build_status = "built" if build else "not built"
+        status_info = f"({build_status}: {current_branch})" if current_branch else f"({build_status})"
+
+        connector_stack = context["stack"]
+
+        prefix = connector_stack.pop()
+
+        while context["depth"] > depth:
+            prefix = connector_stack.pop()
+            context["depth"] -= 1
+
+        connector_stack.append(prefix)
+
+        if depth == 0:
+            connector = prefix + " ── "
+            connector_stack.append(prefix + (" " * 4))
+        else:
+            connector = prefix + ("└── " if index == count else "├── ")
+            connector_stack.append(prefix + (" " * 4 if index == count else "│   "))
+
+        context["depth"] = depth + 1
+        context["report"](connector + current_item + " " + status_info)
+
+    @staticmethod
+    def _yield_module_dependency_tree_entry_full_path(node_info: dict, module: Module, context: dict) -> None:
+        depth = node_info["depth"]
+        current_item = node_info["current_item"]
+
+        connector_stack = context["stack"]
+
+        prefix = connector_stack.pop()
+
+        while context["depth"] > depth:
+            prefix = connector_stack.pop()
+            context["depth"] -= 1
+
+        connector_stack.append(prefix)
+
+        connector = prefix
+        connector_stack.append(prefix + current_item + "/")
+
+        context["depth"] = depth + 1
+        context["report"](connector + current_item)

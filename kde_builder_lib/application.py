@@ -67,15 +67,6 @@ class Application:
         """ModuleResolver object, that makes a new Module. See generate_module_list()."""
         self._base_pid = os.getpid()  # See finish()
 
-        self.ignore_list: list[str] = []
-        """
-        List of KDE project paths to ignore completely.
-
-        A list of KDE project paths to ignore, e.g. "sdk/kde-builder".
-        Partial paths are acceptable, matches are determined by comparing the path provided to the suffix of the full path
-        of modules being compared. See :meth:`KDEProjectsReader.project_path_matches_wildcard_search`.
-        """
-
         # Default to colorized output if sending to TTY
         Debug().set_colorful_output(True if sys.stdout.isatty() else False)
 
@@ -156,59 +147,6 @@ class Application:
 
         self._install_signal_handlers(signal_handler)
 
-    @staticmethod
-    def _yield_module_dependency_tree_entry(node_info: dict, module: Module, context: dict) -> None:
-        depth = node_info["depth"]
-        index = node_info["idx"]
-        count = node_info["count"]
-        build = node_info["build"]
-        current_item = node_info["current_item"]
-        current_branch = node_info["current_branch"]
-
-        build_status = "built" if build else "not built"
-        status_info = f"({build_status}: {current_branch})" if current_branch else f"({build_status})"
-
-        connector_stack = context["stack"]
-
-        prefix = connector_stack.pop()
-
-        while context["depth"] > depth:
-            prefix = connector_stack.pop()
-            context["depth"] -= 1
-
-        connector_stack.append(prefix)
-
-        if depth == 0:
-            connector = prefix + " ── "
-            connector_stack.append(prefix + (" " * 4))
-        else:
-            connector = prefix + ("└── " if index == count else "├── ")
-            connector_stack.append(prefix + (" " * 4 if index == count else "│   "))
-
-        context["depth"] = depth + 1
-        context["report"](connector + current_item + " " + status_info)
-
-    @staticmethod
-    def _yield_module_dependency_tree_entry_full_path(node_info: dict, module: Module, context: dict) -> None:
-        depth = node_info["depth"]
-        current_item = node_info["current_item"]
-
-        connector_stack = context["stack"]
-
-        prefix = connector_stack.pop()
-
-        while context["depth"] > depth:
-            prefix = connector_stack.pop()
-            context["depth"] -= 1
-
-        connector_stack.append(prefix)
-
-        connector = prefix
-        connector_stack.append(prefix + current_item + "/")
-
-        context["depth"] = depth + 1
-        context["report"](connector + current_item)
-
     def generate_module_list(self) -> None:
         """
         Generate the build context and module list based on the command line options and module command line selectors provided.
@@ -281,8 +219,10 @@ class Application:
         ignored_in_global_section.discard("")  # do not place empty string element, there is a check with empty string element of module's module_set later (in post-expansion ignored-selectors check).
         ctx.options["ignore-projects"] = []
 
+        ignored_in_metadata: set[str] = {item.rsplit("/", 1)[-1] for item in ctx.metadata.ignored_projects}
+
         # For user convenience, cmdline ignored selectors would not override the config selectors. Instead, they will be merged.
-        ignored_selectors: set[str] = ignored_in_cmdline | ignored_in_global_section
+        ignored_selectors: set[str] = ignored_in_cmdline | ignored_in_global_section | ignored_in_metadata
 
         # After we read install-dir from config, we can check if we need to start program.
         start_program_and_args: list[str] = opts["start-program"]
@@ -342,8 +282,6 @@ class Application:
         if cmdline_selectors_len:
             modules = modules + module_resolver.resolve_selectors_into_modules(cmdline_selectors)
 
-        self.ignore_list = ctx.metadata.ignored_projects
-
         # Remove modules that are explicitly blanked out in their branch-group
         # i.e. those modules where they *have* a branch-group, and it's set to
         # be empty ("").
@@ -393,20 +331,13 @@ class Application:
         self._resolve_module_dependency_graph(modules)
 
         if "dependency-tree" in cmdline_global_options or "dependency-tree-fullpath" in cmdline_global_options:
-            dep_tree_ctx = {
-                "stack": [""],
-                "depth": 0,
-                "report": lambda *args: print(*args, sep="", end="\n")
-            }
-
             if "dependency-tree" in cmdline_global_options:
-                callback = self._yield_module_dependency_tree_entry
+                mode="tree"
             else:
-                callback = self._yield_module_dependency_tree_entry_full_path
+                mode="fullpath"
 
             self.dependency_resolver.walk_module_dependency_trees(
-                callback,
-                dep_tree_ctx,
+                mode,
                 modules
             )
 
@@ -430,23 +361,6 @@ class Application:
                     logger_app.warning(f" y[*] Project y[{module.name}] was explicitly selected in command line, but removed due to being ignored.")
                 else:
                     logger_app.debug(f"Project y[{module.name}] was removed due to being ignored.")
-        modules = filtered_modules
-
-        # Filtering out modules that are set to be ignored in repo-metadata
-        filtered_modules: list[Module] = []
-        for module in modules:
-            path = None
-            if module in filtered_modules:
-                logger_app.debug("Skipping duplicate project " + module.name)
-            elif ((path := module.get_repopath() or module.name) and
-                  any(re.search(rf"(^|/){item}($|/)", path) for item in self.ignore_list)):
-                # See if the name matches any given in the ignore list.
-
-                logger_app.debug(f"Skipping ignored project {module}")
-            else:
-                logger_app.debug(f"Adding {module} to project list")
-                filtered_modules.append(module)
-
         modules = filtered_modules
 
         for module in modules:
