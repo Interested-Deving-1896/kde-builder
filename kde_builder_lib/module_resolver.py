@@ -12,12 +12,15 @@ from .kb_exception import KBException
 from .kb_exception import KBRuntimeError
 from .kb_exception import NoKDEProjectsFound
 from .kb_exception import UnknownKdeProjectException
+from .debug import KBLogger
 from .module.module import Module
 from .module_set.module_set import ModuleSet
 
 if TYPE_CHECKING:
     from build_context import BuildContext
     from .metadata.kde_projects_reader import KDEProjectsReader
+
+logger_modres = KBLogger.getLogger("module-resolver")
 
 
 class ModuleResolver:
@@ -61,6 +64,10 @@ class ModuleResolver:
 
         self.defined_groups: dict[str, ModuleSet] = {}
         """Holds ModuleSet objects, created because of declared in "group <>" nodes in config."""
+
+        self.explicit_kdeproject_selectors: list[str] = []
+        self.explicit_group_selectors: list[str] = []
+        self.explicit_thirdparty_selectors: list[str] = []
 
     def set_deferred_options(self, deferred_options: list[dict[str, str | dict]]) -> None:
         """
@@ -230,37 +237,24 @@ class ModuleResolver:
 
             self.defined_projects.update({project_result.name: project_result for project_result in project_results})
 
+    def set_explicit_cmdline_selectors(self, cmdline_selectors: list[str]) -> None:
+        proj_db = self.context.projects_db.repositories
+        for el in cmdline_selectors:
+            leaf = el.split("/")[-1]
+            if leaf in proj_db:
+                self.explicit_kdeproject_selectors.append(leaf)
+            elif leaf in self.defined_groups:
+                self.explicit_group_selectors.append(leaf)
+            else:
+                self.explicit_thirdparty_selectors.append(leaf)
+
     def resolve_selectors_into_modules(self, selectors: list[str]) -> list[Module]:
         """
-        Resolve the given list of module selectors into :class:`Module` objects.
-
-        Uses the pending command-line options, ignore-selectors and available
-        modules/module-sets.
-
-        Selectors always choose an available :class:`Module` or :class:`ModuleSet` if
-        present (based on the .name of each Module or ModuleSet, including any
-        use-projects entries for ModuleSet objects). If a selector cannot be
-        directly found then ModuleSet objects may be expanded into their
-        constituent Module objects and the search performed again. If a selector
-        still cannot be found an exception is thrown.
-
-        Any embedded ModuleSets are expanded to Modules in the return value.
-
-        The list of selected Modules is returned, in the approximate order of the
-        input list (selectors for module-sets are expanded in arbitrary order).
+        Resolve the given list of selectors into :class:`Module` objects.
 
         If you are just looking for a Module that should already be present, see
         resolve_module_if_present().
-
-            modules = resolver.resolve_selectors_into_modules(["kdelibs", "juk"])
-
-        Resolves already-stored module selectors into :class:`Module`, based on
-        the options, modules, and module-sets set.
-
-        Returns a list of :class:`Module` in build order, with any module-sets fully
-        expanded. The desired options will be set for each :class:`Module` returned.
         """
-        # We have to be careful to maintain order of selectors throughout.
         names: list[str] = []
         _empty_list = []
         for selector in selectors:
@@ -277,9 +271,9 @@ class ModuleResolver:
 
         output_list: list[Module] = []
         for selector in names:
-            if selector in self.ignored_selectors:
-                continue
-            output_list.extend(self._resolve_single_selector(selector))
+            selector_results = self._resolve_single_selector(selector)
+            filtered_results = self.filter_out_unneeded_modules(selector_results)
+            output_list.extend(filtered_results)
 
         return output_list
 
@@ -296,7 +290,45 @@ class ModuleResolver:
                 pass
 
         ret: Module | None = self.defined_projects.get(module_name, None)
+        if ret:
+            out = self.filter_out_unneeded_modules([ret])
+            ret = out[0] if out else None
         return ret
+
+    def filter_out_unneeded_modules(self, modules: list[Module]) -> list[Module]:
+        ignored_selectors = self.ignored_selectors
+        filtered_modules: list[Module] = []
+        for module in modules:
+            module_set_name = module.module_set.name if module.module_set else ""
+
+            if module.name in ignored_selectors:
+                if module.name in [*self.explicit_kdeproject_selectors, *self.explicit_thirdparty_selectors]:
+                    logger_modres.warning(f" y[*] Project y[{module.name}] was explicitly selected in command line, but removed due to being ignored.")
+                else:
+                    logger_modres.debug(f"Project y[{module.name}] was removed due to being ignored.")
+                continue
+            elif module_set_name in ignored_selectors:
+                if module_set_name in self.explicit_group_selectors:
+                    logger_modres.warning(f" y[*] Group y[{module_set_name}] was explicitly selected in command line, but is ignored, so project y[{module.name}] was removed.")
+                else:
+                    if module.name in [*self.explicit_kdeproject_selectors, *self.explicit_thirdparty_selectors]:
+                        logger_modres.warning(f" y[*] Group y[{module_set_name}] is ignored, so project y[{module.name}] was removed.")
+                    else:
+                        logger_modres.debug(f"Group y[{module_set_name}] is ignored, so project y[{module.name}] was removed.")
+                continue
+            elif module_set_name in ["qt6-set"]:
+                if module.get_option("install-dir") == "":
+                    # User may have set their qt-install-dir option to empty string (the default), which means disabling building qt modules.
+                    # But still user can accidentally request to build some qt modules (by explicitly specifying such modules in cmdline, or
+                    # by building all). We should not allow building qt modules in such case.
+                    # Otherwise, as their real "install-dir" is empty, their CMAKE_INSTALL_PREFIX will be incorrect (set to empty), and such
+                    # modules could not pass cmake configure.
+                    logger_modres.warning(f" y[*] Removing y[third-party]/y[{module.name}] due to qt-install-dir")
+                    continue
+            else:
+                filtered_modules.append(module)
+
+        return filtered_modules
 
 """
 This class uses a multi-pass option resolving system, in accordance with

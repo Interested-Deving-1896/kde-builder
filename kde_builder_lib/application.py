@@ -216,7 +216,7 @@ class Application:
             exit(0)
 
         ignored_in_global_section: set[str] = set(ctx.options["ignore-projects"])
-        ignored_in_global_section.discard("")  # do not place empty string element, there is a check with empty string element of module's module_set later (in post-expansion ignored-selectors check).
+        ignored_in_global_section.discard("")  # do not place empty string element, there is a check with empty string element of module's module_set later in filter_out_unneeded_modules().
         ctx.options["ignore-projects"] = []
 
         ignored_in_metadata: set[str] = {item.rsplit("/", 1)[-1] for item in ctx.metadata.ignored_projects}
@@ -249,6 +249,7 @@ class Application:
         module_resolver.handle_initial_projects()
         module_resolver.ignored_selectors = ignored_selectors
         module_resolver.expand_all_groups()
+        module_resolver.set_explicit_cmdline_selectors(cmdline_selectors)
 
         self.module_resolver = module_resolver
 
@@ -289,28 +290,8 @@ class Application:
         branch_group = ctx.get_option("branch-group")
         self._warn_if_branch_group_does_not_exists(branch_group)
 
-        explicit_kdeproject_selectors: list[str] = []
-        explicit_thirdparty_selectors: list[str] = []
-        proj_db = self.context.projects_db.repositories
-        for el in cmdline_selectors:
-            leaf = el.split("/")[-1]
-            if leaf in proj_db:
-                explicit_kdeproject_selectors.append(leaf)
-            else:
-                explicit_thirdparty_selectors.append(leaf)
-
         filtered_modules: list[Module] = []
         for module in modules:
-            if module.module_set and module.module_set.name in ["qt6-set"]:
-                if module.get_option("install-dir") == "":
-                    # User may have set their qt-install-dir option to empty string (the default), which means disabling building qt modules.
-                    # But still user can accidentally request to build some qt modules (by explicitly specifying such modules in cmdline, or
-                    # by building all when not specifying any). We should not allow building qt modules in such case.
-                    # Otherwise, as their real "install-dir" is empty, their CMAKE_INSTALL_PREFIX will be incorrect (set to empty), and such
-                    # modules could not pass cmake configure.
-                    logger_app.warning(f" y[*] Removing y[third-party]/y[{module.name}] due to qt-install-dir")
-                    continue
-
             if module.is_kde_project():
                 repopath = module.get_repopath()
                 branch = resolver.resolve_branch_group(repopath or module.name, branch_group)
@@ -318,7 +299,7 @@ class Application:
                     printpath = repopath
                     printpath = "y[" + printpath.replace("/", "]/y[") + "]"
                     message = f" y[*] Removing {printpath} due to branch-group"
-                    if module.name in explicit_kdeproject_selectors:
+                    if module.name in module_resolver.explicit_kdeproject_selectors:
                         logger_app.warning(message)
                     else:
                         logger_app.debug(message)
@@ -346,19 +327,6 @@ class Application:
         modules = self.dependency_resolver.sort_modules_into_build_order()
 
         modules = self._slice_resume_and_stop_points(modules)
-
-        # Check for ignored modules (post-expansion)
-        filtered_modules: list[Module] = []
-        for module in modules:
-            module_set_name = module.module_set.name if module.module_set else ""
-            if module.name not in ignored_selectors and module_set_name not in ignored_selectors:
-                filtered_modules.append(module)
-            else:
-                if module.name in [*explicit_kdeproject_selectors, *explicit_thirdparty_selectors]:
-                    logger_app.warning(f" y[*] Project y[{module.name}] was explicitly selected in command line, but removed due to being ignored.")
-                else:
-                    logger_app.debug(f"Project y[{module.name}] was removed due to being ignored.")
-        modules = filtered_modules
 
         for module in modules:
             module.set_resolved_repository()
