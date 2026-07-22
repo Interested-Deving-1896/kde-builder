@@ -293,6 +293,8 @@ class ModuleResolver:
         if ret:
             out = self.filter_out_unneeded_modules([ret])
             ret = out[0] if out else None
+        else:
+            logger_modres.debug(f" y[*] Project y[third-party]/y[{module_name}] is not defined!")
         return ret
 
     def filter_out_unneeded_modules(self, modules: list[Module]) -> list[Module]:
@@ -325,8 +327,26 @@ class ModuleResolver:
                     # modules could not pass cmake configure.
                     logger_modres.warning(f" y[*] Removing y[third-party]/y[{module.name}] due to qt-install-dir")
                     continue
-            else:
-                filtered_modules.append(module)
+
+            if module.is_kde_project():
+                # Remove projects that are explicitly blanked out in their branch-group,
+                # i.e. those projects where they *have* a branch-group, and it's set to be empty ("").
+                ctx = self.context
+                resolver = ctx.branch_group_resolver
+                branch_group = ctx.get_option("branch-group")
+                repopath = module.get_repopath()
+                branch = resolver.resolve_branch_group(repopath, branch_group)
+                if branch == "":  # Note that None means it was not mentioned, while "" means it was explicitly disabled
+                    printpath = repopath
+                    printpath = "y[" + printpath.replace("/", "]/y[") + "]"
+                    message = f" y[*] Removing {printpath} due to branch-group"
+                    if module.name in self.explicit_kdeproject_selectors:
+                        logger_modres.warning(message)
+                    else:
+                        logger_modres.debug(message)
+                    continue
+
+            filtered_modules.append(module)
 
         return filtered_modules
 
