@@ -111,6 +111,7 @@ class TaskManager:
             logger_taskmanager.warning(" b[<<<  Build Process  >>>]\n")
             result: int = self._handle_build(ipc, ctx) or result
 
+        ctx.status_view.progress_bar_disable()
         return result
 
     # Internal API
@@ -235,10 +236,23 @@ class TaskManager:
         # value to write. If the build succeeds we'll reset to 0 then.
         module.set_persistent_option("failure-count", fail_count + 1)
 
-        if module.build():
+        if not module.build():
+            return "build"  # phase failed at
+
+        if not module.phases.has("install"):
+            logger_taskmanager.info("\tSkipping install due to disabled install phase.")
             module.set_persistent_option("failure-count", 0)
             return ""
-        return "build"  # phase failed at
+
+        # Clear the progress values after build process, so they do not influence on initial progress of install process.
+        # This is needed because the install() is invoked after build().
+        module.context.status_view.reset_progress()
+
+        if not module.install():
+            return "install"  # phase failed at
+
+        module.set_persistent_option("failure-count", 0)
+        return ""
 
     def _handle_build(self, ipc: IPC, ctx: BuildContext) -> int:
         """
@@ -311,7 +325,7 @@ class TaskManager:
         num_modules = len(modules)
 
         status_viewer = ctx.status_view
-        status_viewer.number_modules_total(num_modules)
+        status_viewer.mod_total = num_modules
 
         while modules:
             module = modules.pop(0)
@@ -322,6 +336,9 @@ class TaskManager:
             module_name = module.name
             block_substr = self._form_block_substring(module)
             logger_taskmanager.warning(f"Building {block_substr} ({cur_module}/{num_modules})")
+            status_viewer.mod_current = cur_module
+            status_viewer.reset_progress()  # Resetting previous project's progress
+            status_viewer.progress_bar_update()
 
             failed_phase: str = TaskManager._build_single_module(ipc, module)
 
@@ -329,7 +346,7 @@ class TaskManager:
                 # FAILURE
                 ctx.mark_module_phase_failed(failed_phase, module)
                 print(f"{module.name}: Failed to {failed_phase}.", file=status_list_fh)
-                if failed_phase == "build":
+                if failed_phase == "build" or failed_phase == "install":
                     print(module.name, file=failed_to_build_fh)
                 if failed_phase == "update":
                     print(module.name, file=failed_to_update_fh)
@@ -356,13 +373,13 @@ class TaskManager:
                     else:
                         logfile = "No log file"
                 logger_taskmanager.info("\tError log: r[" + logfile)
-                status_viewer.number_modules_failed(1 + status_viewer.number_modules_failed())
+                status_viewer.mod_failed += 1
             else:
                 # Success
                 print(f"{module.name}: Succeeded.", file=status_list_fh)
                 print(f"{module.name}", file=successfully_build_fh)
                 build_done.append(module_name)  # Make it show up as a success
-                status_viewer.number_modules_succeeded(1 + status_viewer.number_modules_succeeded())
+                status_viewer.mod_success += 1
             cur_module += 1
             logger_taskmanager.warning("")  # Space between "Building project/name (n/n)" blocks
 

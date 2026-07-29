@@ -95,7 +95,7 @@ class Module(OptionsBase):
         self.env: dict[str, str] = {}
 
         self.current_phase: str | None = None
-        """For disabling the line "# with environment: .../kde-builder.env" in logged commands for git commands."""
+        """For customizing behavior depending on the phase."""
 
         if self.__class__.__name__ != "BuildContext":
             # Avoid setting this for BuildContext, because it has its own option value type verification code, which needs BuildContext to be already initialized
@@ -230,7 +230,7 @@ class Module(OptionsBase):
 
     def build(self) -> bool:
         """
-        Execute the build and install (or pretends to in pretend mode) using the appropriate build system. Can also run the testsuite as part of the build.
+        Execute the build (or pretends to in pretend mode) using the appropriate build system. Can also run the testsuite as part of the build.
 
         Returns:
              False on failure, True on success.
@@ -246,7 +246,9 @@ class Module(OptionsBase):
         if self.get_option("build-system-only"):
             return True
 
+        self.current_phase = "build"
         build_results = build_system.build_internal()
+        self.current_phase = None
         if not build_results["was_successful"]:
             return False
 
@@ -255,13 +257,7 @@ class Module(OptionsBase):
         if self.get_option("run-tests"):
             self.build_system.run_testsuite()
 
-        if not self.phases.has("install"):
-            logger_module.info("\tSkipping install due to disabled install phase.")
-            return True
-
-        self.context.status_view.__init__()  # Clear the progress values after build process, so they do not influence on initial progress of install process. This is needed because currently the install() is invoked from build().
-        # TODO: this should be a phase to run.
-        return self.install()
+        return True
 
     def setup_build_system(self) -> bool:
         """

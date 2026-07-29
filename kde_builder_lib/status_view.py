@@ -19,62 +19,53 @@ class StatusView:
     """
 
     def __init__(self):
-        # defaultOpts
+        self.current_project_phase: str | None = None
+        """
+        We update progress bar percenatage for current project only for "build" phase, not for "install" phase.
+        """
 
-        self.cur_progress = -1
-        self.progress_total = -1
+        self.current_project_cur_progress = -1
+        self.current_project_full_progress = -1
+        """
+        The total amount of progress deemed possible.
+        """
         self.status = ""
+        """
+        The "base" message to show as part of the update. E.g. "Compiling...".
+        """
 
         # Records number of modules built stats
         self.mod_total = -1
+        """
+        Number of modules to be built.
+        """
         self.mod_failed = 0
+        """
+        Number of modules not built successfully.
+        """
         self.mod_success = 0
-
-    def set_status(self, new_status) -> None:
         """
-        Set the "base" message to show as part of the update. E.g. "Compiling...".
+        Number of modules built successfully.
         """
-        self.status = Debug().colorize(new_status)
+        self.mod_current = -1
+        """
+        The number of module that is currently built.
+        """
 
     def set_progress(self, new_progress) -> None:
         """
         Set the amount of progress made vs. the total progress possible.
         """
-        old_progress = self.cur_progress
-        self.cur_progress = new_progress
+        old_progress = self.current_project_cur_progress
+        self.current_project_cur_progress = new_progress
 
         if old_progress != new_progress:
             self.update()
 
-    def set_progress_total(self, new_progress_total) -> None:
-        """
-        Set the total amount of progress deemed possible.
-        """
-        self.progress_total = new_progress_total
-
-    def number_modules_total(self, new_total: int = None) -> int:
-        """
-        Get (or set, if arg provided) number of modules to be built.
-        """
-        if new_total:
-            self.mod_total = new_total
-        return self.mod_total
-
-    def number_modules_succeeded(self, new_total: int | None = None) -> int:
-        """
-        Get (or set, if arg provided) number of modules built successfully.
-        """
-        if new_total:
-            self.mod_success = new_total
-        return self.mod_success
-
-    def number_modules_failed(self, new_total: int | None = None) -> int:
-        """
-        Get (or set, if arg provided) number of modules not built successfully.
-        """
-        if new_total:
-            self.mod_failed = new_total
-        return self.mod_failed
+    def reset_progress(self) -> None:
+        self.current_project_cur_progress = -1
+        self.current_project_full_progress = -1
+        self.status = ""
 
     def update(self) -> None:
         """
@@ -82,8 +73,7 @@ class StatusView:
 
         E.g. for TTY it clears the line and redisplays the current stats.
         """
-        progress_total = self.progress_total
-        msg = None
+        current_project_full_progress = self.current_project_full_progress
 
         mod_total, mod_success, mod_failed = self.mod_total, self.mod_success, self.mod_failed
 
@@ -91,24 +81,47 @@ class StatusView:
 
         if mod_total > 1:
             # Build up message in reverse order
-            msg = f"{mod_total} projects"
+            tail_msg = f"{mod_total} projects"
             if mod_failed:
-                msg = Debug().colorize(f"r[b[{mod_failed}] failed, ") + msg
+                tail_msg = Debug().colorize(f"r[b[{mod_failed}] failed, ") + tail_msg
             if mod_success:
-                msg = Debug().colorize(f"g[b[{mod_success}] built, ") + msg
+                tail_msg = Debug().colorize(f"g[b[{mod_success}] built, ") + tail_msg
 
-            status_line = self.status + f" ({msg})"
+            status_line = status_line + f" ({tail_msg})"
 
-        if progress_total > 0:
-            msg = "{:.1f}%{}".format(self.cur_progress * 100 / progress_total, status_line)
+        if current_project_full_progress > 0:
+            msg = f"{self.current_project_cur_progress * 100 / current_project_full_progress:.1f}%{status_line}"
 
-        elif self.cur_progress < 0:
+        elif self.current_project_cur_progress < 0:
             msg = status_line
         else:
             spinner = "-\\|/"
-            msg = spinner[self.cur_progress % len(spinner)] + status_line
+            msg = spinner[self.current_project_cur_progress % len(spinner)] + status_line
 
         StatusView._clear_line_and_update(msg)
+        # Avoid updating progress bar in "install" phase. We do this because the "install"
+        # phase is run after "build" phase, and it resets the progress back to 0.
+        # Otherwise, user will see progress bar ugly jumps back.
+        if self.current_project_phase == "build":
+             self.progress_bar_update()
+
+    def progress_bar_update(self):
+        mod_current = self.mod_current
+        mod_total = self.mod_total
+        current_project_full_progress = self.current_project_full_progress
+        current_project_cur_progress = self.current_project_cur_progress
+
+        passed_by_other_projects = int(100 * (mod_current - 1) / mod_total)
+
+        if current_project_full_progress > 0:
+            passed_by_current_project = int(100 * (current_project_cur_progress / current_project_full_progress) / mod_total)
+            percent = passed_by_other_projects + passed_by_current_project
+        else:
+            percent = passed_by_other_projects
+        print(f"\033]9;4;1;{percent}\033\\", end="")
+
+    def progress_bar_disable(self):
+        print("\033]9;4;0;0\033\\", end="")
 
     @staticmethod
     def release_tty(msg: str = "") -> None:
