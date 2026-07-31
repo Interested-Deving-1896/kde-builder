@@ -15,6 +15,7 @@ from .kb_exception import UnknownKdeProjectException
 from .debug import KBLogger
 from .module.module import Module
 from .module_set.module_set import ModuleSet
+from .options_base import OptionsBase
 
 if TYPE_CHECKING:
     from build_context import BuildContext
@@ -69,7 +70,7 @@ class ModuleResolver:
         self.explicit_group_selectors: list[str] = []
         self.explicit_thirdparty_selectors: list[str] = []
 
-    def set_deferred_options(self, deferred_options: list[dict[str, str | dict]]) -> None:
+    def set_deferred_options(self, deferred_options: list[OptionsBase]) -> None:
         """
         Set options to apply later if a module set resolves to a named module, used for "override" nodes.
 
@@ -83,7 +84,7 @@ class ModuleResolver:
         final_opts: dict[str, dict] = {}
 
         for idx, deferred_entry in enumerate(deferred_options):
-            opts = deferred_entry["opts"]
+            opts = deferred_entry.options
             referenced_modules = opts.get("use-projects", None)
 
             # Skip "override" nodes that don't reference module-sets
@@ -112,8 +113,8 @@ class ModuleResolver:
         # and overlay any new options on
 
         for idx, deferred_entry in enumerate(deferred_options):
-            name = deferred_entry["name"]
-            opts = deferred_entry["opts"]
+            name = deferred_entry.name
+            opts = deferred_entry.options
 
             if name in final_opts:
                 final_opts[name].update(opts)
@@ -193,7 +194,7 @@ class ModuleResolver:
         elif selector_name in self.defined_groups:
             group: ModuleSet = self.defined_groups[selector_name]
             # At this point, all groups are expanded. So just take its projects.
-            projects: list[Module] = group.get_projects()
+            projects: list[Module] = group.project_objects_list
             results.extend(projects)
 
         # Case 3: selector_name names either kde project that is not yet in self.defined_projects, or is fully unrecognized.
