@@ -1,0 +1,36 @@
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[project]
+name = "kde-builder"
+dynamic = ["version"]
+description = "A tool to streamline the process of setting up and maintaining development environment for KDE software"
+requires-python = ">=3.10"
+
+dependencies = [
+    "dbus-python",
+    "exceptiongroup; python_version < '3.11'",
+    "overrides; python_version < '3.11'",
+    "pyyaml",
+    "setproctitle",
+]
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "pytest-cov",
+]
+
+[project.scripts]
+kde-builder = "kde_builder.main:main"
+
+[tool.uv]
+package = true
+
+[tool.hatch.version]
+source = "vcs"
+raw-options = { version_scheme = "post-release" }
+
+[tool.hatch.build.targets.wheel]
+packages = ["kde_builder"]
