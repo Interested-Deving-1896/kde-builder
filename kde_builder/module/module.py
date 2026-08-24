@@ -184,7 +184,7 @@ class Module(PathResolvingOptions):
         """
         build_system = self.build_system
 
-        if build_system.name() == "generic" and not Debug().pretending() and not self.get_option("custom-build-command"):
+        if build_system.name() == "generic" and not Debug().pretending():
             logger_module.error(f"\tr[b[{self.name}] does not seem to have a build system to use.")
             return False
 
@@ -216,10 +216,6 @@ class Module(PathResolvingOptions):
              True on success, False (0) on failure.
         """
         build_system = self.build_system
-
-        if build_system.name() == "generic" and self.get_option("custom-build-command"):
-            logger_module.info(f"\tb[*] No build system detected for b[y[{self.name}], assuming custom build command will handle")  # tab?
-            return True
 
         if build_system.name() == "generic" and not Debug().pretending():
             raise ProgramError("Build system determination still pending when build attempted.")

@@ -1,5 +1,8 @@
 # Changelog
 
+2026-08-25
+: Removed option `custom-build-command`.
+
 2026-02-15
 : Removed option `build-when-unchanged`.
 

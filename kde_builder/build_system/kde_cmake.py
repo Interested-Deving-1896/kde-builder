@@ -295,9 +295,6 @@ class BuildSystemKDECMake(BuildSystem):
         generator = self.get_cmake_generator()
         target = BuildSystemKDECMake.GENERATOR_MAP[generator]["install_target"]
 
-        if module.get_option("custom-build-command"):
-            target = "install"
-
         return self.safe_make({
             "target": target,
             "message": f"Installing g[{module}]",

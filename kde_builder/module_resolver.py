@@ -418,7 +418,6 @@ the way kde-builder handles options. Consider a simple kde-builder.yaml:
 
  override juk:
    cxxflags: -g3 -Og
-   custom-build-command: ninja
 
 In this case we'd expect that a project like taglib ends up with its
 ``cmake-options`` derived from the global section directly, while all projects
@@ -426,7 +425,7 @@ included from group ``ms-foo`` use the ``cmake-options`` defined in the
 group.
 
 At the same time we'd expect that juk has all the options listed in ms-foo, but
-also the specific ``cxxflags`` and ``custom-build-command`` options shown,
+also the specific ``cxxflags`` option shown,
 `no matter how` the juk project had been referenced during the build.
 
 There are many ways to convince kde-builder to add a project into its build list:

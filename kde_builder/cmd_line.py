@@ -378,9 +378,6 @@ class Cmdline:
         if args.configure_flags is not None:
             found_options["configure-flags"] = args.configure_flags[0]
 
-        if args.custom_build_command is not None:
-            found_options["custom-build-command"] = args.custom_build_command[0]
-
         if args.cxxflags is not None:
             found_options["cxxflags"] = args.cxxflags[0]
 

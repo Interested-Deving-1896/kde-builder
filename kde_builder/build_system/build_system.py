@@ -346,9 +346,7 @@ class BuildSystem:
 
         Note that the make command is based on the results of the "build_commands"
         function which should be overridden if necessary by subclasses. Each
-        command should be the command name (i.e. no path). The user may override
-        the command used (for build only) by using the "custom-build-command"
-        option.
+        command should be the command name (i.e. no path).
 
         The first command name found which resolves to an executable on the
         system will be used, if no command this function will fail.
@@ -363,27 +361,11 @@ class BuildSystem:
         """
         module = self.module
 
-        command_to_use = module.get_option("custom-build-command")
-        build_command = None
-        build_command_line = []
-
-        # Check for custom user command. We support command line options being
-        # passed to the command as well.
-        if command_to_use:
-            build_command, *build_command_line = Util.split_quoted_on_whitespace(command_to_use)
-            command_to_use = build_command  # Don't need whole cmdline in any errors.
-            build_command = Util.locate_exe(build_command)
-        else:
-            # command line options passed in opts
-            command_to_use = build_command = self.default_build_command()
+        build_command = self.default_build_command()
 
         if not build_command:
-            logger_buildsystem.error(f" r[b[*] Unable to find the g[{command_to_use}] executable!")
+            logger_buildsystem.error(f" r[b[*] Unable to find the g[{build_command}] executable!")
             return {"was_successful": 0}
-
-        # Make it prettier if pretending (Remove leading directories).
-        if Debug().pretending():
-            build_command = re.sub(r"^/.*/", "", build_command)
 
         # Simplify code by forcing lists to exist.
         if "prefix-options" not in opts:
@@ -410,7 +392,7 @@ class BuildSystem:
             prefix_opts.insert(1, "-S")  # Add -S right after "sudo"
 
         # Assemble arguments
-        args = [*prefix_opts, *taskset_args, build_command, *build_command_line]
+        args = [*prefix_opts, *taskset_args, build_command]
         if opts["target"]:
             args.append(opts["target"])
         args.extend(opts["make-options"])
