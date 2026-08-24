@@ -482,6 +482,7 @@ class DependencyResolver:
             return
 
         self._copy_up_dependencies()
+        self.module_resolver.filter_out_unneeded_custom_qt_libs(self)
         self._run_dependency_vote()
         return
 

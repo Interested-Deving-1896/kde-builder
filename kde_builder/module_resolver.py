@@ -20,6 +20,7 @@ from kde_builder.options_base import OptionsBase
 if TYPE_CHECKING:
     from kde_builder.build_context import BuildContext
     from kde_builder.metadata.kde_projects_reader import KDEProjectsReader
+    from dependency_resolver import DependencyResolver
 
 logger_modres = KBLogger.getLogger("module-resolver")
 
@@ -354,6 +355,43 @@ class ModuleResolver:
             filtered_modules.append(module)
 
         return filtered_modules
+
+    def filter_out_unneeded_custom_qt_libs(self, dependency_resolver: DependencyResolver) -> None:
+        """
+        Mark projects of custom-qt-libs group as not build in case they are not needed.
+
+        The condition when custom qt lib _is_ needed is when at least one of the following is true:
+          - User is using non-system Qt installation.
+          - User explicitly required that specific custom qt lib.
+          - User explicitly required some other custom qt lib, which included that specific custom qt lib as a dependency.
+        """
+        using_non_system_qt = self.context.get_option("qt-install-dir")
+        if using_non_system_qt:
+            return
+
+        custom_qt_libs_group = self.defined_groups.get("custom-qt-libs", None)
+        all_custom_qt_libs: list[str] = custom_qt_libs_group.modules_to_find if custom_qt_libs_group else []
+        explicit_from_custom_qt_libs: list[str] = [el for el in self.explicit_thirdparty_selectors if el in all_custom_qt_libs]
+
+        module_graph = dependency_resolver.dependency_graph
+
+        for custom_qt_lib in all_custom_qt_libs:
+            explicitly_selected = custom_qt_lib in explicit_from_custom_qt_libs
+            if explicitly_selected:
+                continue
+
+            is_included_by_explicitly_selected_custom_qt_lib = False
+            for el in explicit_from_custom_qt_libs:
+                if custom_qt_lib in module_graph[el]["all_deps"]["items"]:
+                    is_included_by_explicitly_selected_custom_qt_lib = True
+                    break
+            if is_included_by_explicitly_selected_custom_qt_lib:
+                continue
+
+            graph_item = module_graph.get(custom_qt_lib)
+            if graph_item:
+                logger_modres.debug(f"Removing y[{custom_qt_lib}] from building, because it is not required.")
+                graph_item["build"] = False
 
 """
 This class uses a multi-pass option resolving system, in accordance with
