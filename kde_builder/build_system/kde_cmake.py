@@ -295,12 +295,13 @@ class BuildSystemKDECMake(BuildSystem):
         generator = self.get_cmake_generator()
         target = BuildSystemKDECMake.GENERATOR_MAP[generator]["install_target"]
 
-        return self.safe_make({
-            "target": target,
-            "message": f"Installing g[{module}]",
-            "prefix-options": cmd_prefix,
-            "logfile": "install",
-        })["was_successful"]
+        ret = self.safe_make(
+            target=target,
+            message=f"Installing g[{module}]",
+            prefix_options=cmd_prefix,
+            logname="install",
+        )
+        return ret["was_successful"]
 
     # @override
     def configure_internal(self) -> bool:

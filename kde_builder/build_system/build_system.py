@@ -202,12 +202,12 @@ class BuildSystem:
         Return dict with build results (see safe_make).
         """
         build_options = self.get_build_options()
-        ret = self.safe_make({
-            "target": None,
-            "message": "Compiling...",
-            "make-options": build_options,
-            "logbase": "build",
-        })
+        ret = self.safe_make(
+            target=None,
+            message="Compiling...",
+            make_options=build_options,
+            logname="build",
+        )
         return ret
 
     def configure_internal(self) -> bool:
@@ -244,11 +244,12 @@ class BuildSystem:
         """
         module = self.module
 
-        return self.safe_make({
-            "target": "install",
-            "message": f"Installing g[{module}]",
-            "prefix-options": cmd_prefix,
-        })["was_successful"]
+        ret = self.safe_make(
+            target="install",
+            message=f"Installing g[{module}]",
+            prefix_options=cmd_prefix,
+        )
+        return ret["was_successful"]
 
     def uninstall_internal(self, cmd_prefix: list[str]) -> bool:
         """
@@ -259,11 +260,12 @@ class BuildSystem:
         """
         module = self.module
         module.unset_persistent_option("last-install-rev")
-        return self.safe_make({
-            "target": "uninstall",
-            "message": f"Uninstalling g[{module}]",
-            "prefix-options": cmd_prefix,
-        })["was_successful"]
+        ret = self.safe_make(
+            target="uninstall",
+            message=f"Uninstalling g[{module}]",
+            prefix_options=cmd_prefix,
+        )
+        return ret["was_successful"]
 
     def clean_build_system(self) -> int:
         """
@@ -323,28 +325,29 @@ class BuildSystem:
 
         return 1
 
-    def safe_make(self, opts: dict) -> dict:
+    def safe_make(
+            self,
+            target: None | str,
+            message: str,
+            make_options: list[str] | None = None,
+            prefix_options: list[str] | None = None,
+            logname: str = "",
+        ) -> dict:
         """
-        Run the build command with the arguments given by the passed dict.
+        Run the build command.
 
-        Passed dict is laid out as:
-        ::
+        Args:
+            target: None, or a valid build target e.g. "install".
+            message: "Compiling...", "Installing...", etc.
+            make_options: List of command line arguments to pass to make
+            prefix_options: List of command line arguments to prefix *before* the
+                make command, used for make-install-prefix support for e.g. sudo
+            logname: base log file name
 
-            {
-               target         : None, or a valid build target e.g. "install",
-               message        : "Compiling.../Installing.../etc."
-               make-options   : [ list of command line arguments to pass to make. See
-                                   make-options ],
-               prefix-options : [ list of command line arguments to prefix *before* the
-                                   make command, used for make-install-prefix support for
-                                   e.g. sudo ],
-               logbase        : "base-log-filename",
-            }
-
-        target and message are required. logbase is required if target is left
+        target and message are required. logname is required if target is left
         undefined, but otherwise defaults to the same value as target.
 
-        Note that the make command is based on the results of the "build_commands"
+        Note that the make command is based on the results of the `build_commands()`
         function which should be overridden if necessary by subclasses. Each
         command should be the command name (i.e. no path).
 
@@ -368,12 +371,12 @@ class BuildSystem:
             return {"was_successful": 0}
 
         # Simplify code by forcing lists to exist.
-        if "prefix-options" not in opts:
-            opts["prefix-options"] = []
-        if "make-options" not in opts:
-            opts["make-options"] = []
+        if prefix_options is None:
+            prefix_options = []
+        if make_options is None:
+            make_options = []
 
-        prefix_opts = opts["prefix-options"]
+        prefix_opts = prefix_options
 
         taskset_args = []
         taskset_opt = module.get_option("taskset-cpu-list")
@@ -393,18 +396,18 @@ class BuildSystem:
 
         # Assemble arguments
         args = [*prefix_opts, *taskset_args, build_command]
-        if opts["target"]:
-            args.append(opts["target"])
-        args.extend(opts["make-options"])
+        if target:
+            args.append(target)
+        args.extend(make_options)
 
-        logname = opts.get("logbase", opts.get("logfile", opts.get("target", "")))  # pl2py: if all of these are undefined, logname remains undef in perl. But undef in perl becomes empty string when stringified.
+        logname = logname or target or ""
 
         builddir = module.fullpath("build")
         builddir = re.sub(r"/*$", "", builddir)  # Remove trailing /
 
         Util.p_chdir(builddir)
 
-        return self._run_build_command(opts["message"], logname, args)
+        return self._run_build_command(message, logname, args)
 
     def _run_build_command(self, message: str, filename: str, args: list[str]) -> dict:
         """
