@@ -194,9 +194,9 @@ class Module(PathResolvingOptions):
             return True
 
         self.current_phase = "build"
-        build_results = build_system.build_internal()
+        build_result = build_system.build_internal()
         self.current_phase = None
-        if not build_results["was_successful"]:
+        if not build_result:
             return False
 
         self.set_persistent_option("last-build-rev", self.current_scm_revision())

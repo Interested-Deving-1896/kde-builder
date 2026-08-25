@@ -290,6 +290,9 @@ class BuildSystemKDECMake(BuildSystem):
     def install_internal(self, cmd_prefix: list[str]) -> bool:
         """
         Re-implementing the one in BuildSystem since in CMake we want to call make install/fast, so it only installs rather than building + installing.
+
+        Returns:
+            bool: False if unable to install, True otherwise.
         """
         module = self.module
         generator = self.get_cmake_generator()
@@ -301,7 +304,7 @@ class BuildSystemKDECMake(BuildSystem):
             prefix_options=cmd_prefix,
             logname="install",
         )
-        return ret["was_successful"]
+        return ret
 
     # @override
     def configure_internal(self) -> bool:

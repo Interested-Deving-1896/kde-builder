@@ -197,10 +197,7 @@ class BuildSystem:
 
         return build_options
 
-    def build_internal(self) -> dict:
-        """
-        Return dict with build results (see safe_make).
-        """
+    def build_internal(self) -> bool:
         build_options = self.get_build_options()
         ret = self.safe_make(
             target=None,
@@ -240,7 +237,9 @@ class BuildSystem:
         Install a module (that has already been built, tested, etc.).
 
         All options passed are prefixed to the eventual command to be run.
-        Returns boolean false if unable to install, true otherwise.
+
+        Returns:
+            bool: False if unable to install, True otherwise.
         """
         module = self.module
 
@@ -249,14 +248,16 @@ class BuildSystem:
             message=f"Installing g[{module}]",
             prefix_options=cmd_prefix,
         )
-        return ret["was_successful"]
+        return ret
 
     def uninstall_internal(self, cmd_prefix: list[str]) -> bool:
         """
         Uninstall a previously installed module.
 
         All options passed are prefixed to the eventual command to be run.
-        Returns boolean false if unable to uninstall, true otherwise.
+
+        Returns:
+            bool: False if unable to uninstall, True otherwise.
         """
         module = self.module
         module.unset_persistent_option("last-install-rev")
@@ -265,7 +266,7 @@ class BuildSystem:
             message=f"Uninstalling g[{module}]",
             prefix_options=cmd_prefix,
         )
-        return ret["was_successful"]
+        return ret
 
     def clean_build_system(self) -> int:
         """
@@ -332,7 +333,7 @@ class BuildSystem:
             make_options: list[str] | None = None,
             prefix_options: list[str] | None = None,
             logname: str = "",
-        ) -> dict:
+        ) -> bool:
         """
         Run the build command.
 
@@ -354,13 +355,8 @@ class BuildSystem:
         The first command name found which resolves to an executable on the
         system will be used, if no command this function will fail.
 
-        Returns a dict:
-        ::
-
-            {
-              was_successful : bool  # if successful
-              warnings       : int  # num of warnings
-            }
+        Returns:
+            bool: True on success, False on failure.
         """
         module = self.module
 
@@ -368,7 +364,7 @@ class BuildSystem:
 
         if not build_command:
             logger_buildsystem.error(f" r[b[*] Unable to find the g[{build_command}] executable!")
-            return {"was_successful": 0}
+            return False
 
         # Simplify code by forcing lists to exist.
         if prefix_options is None:
@@ -407,9 +403,10 @@ class BuildSystem:
 
         Util.p_chdir(builddir)
 
-        return self._run_build_command(message, logname, args)
+        ret = self._run_build_command(message, logname, args)
+        return ret
 
-    def _run_build_command(self, message: str, filename: str, args: list[str]) -> dict:
+    def _run_build_command(self, message: str, filename: str, args: list[str]) -> bool:
         """
         Run make and process the build process output in order to provide completion updates.
 
@@ -419,11 +416,11 @@ class BuildSystem:
             args: An array with the command and its arguments. i.e. ["command", "arg1", "arg2"]
 
         Returns:
-             Dict as defined by safe_make
+            bool: True on success, False on failure.
         """
         module = self.module
         builddir = module.fullpath("build")
-        result = {"was_successful": 0}
+        result = False
         ctx = module.context
 
         # There are situations when we don't want progress output:
@@ -432,7 +429,7 @@ class BuildSystem:
         if not sys.stderr.isatty() or logger_logged_cmd.isEnabledFor(logging.DEBUG):
             logger_buildsystem.warning(f"\t{message}")
 
-            result["was_successful"] = Util.good_exitcode(Util.run_logged(module, filename, builddir, args))
+            result = Util.good_exitcode(Util.run_logged(module, filename, builddir, args))
 
             return result
 
@@ -451,7 +448,6 @@ class BuildSystem:
             # So to keep that initial line "        Installing ark", we need to add a new line after statusView prints its line and moves cursor to the beginning of line.
             print("\n", end="")
 
-        # TODO More details
         warnings = 0
 
         def on_child_output(input_line):
@@ -488,17 +484,14 @@ class BuildSystem:
 
         try:
             exitcode = cmd.start()
-            result = {
-                "was_successful": exitcode == 0,
-                "warnings": warnings,
-            }
+            result = exitcode == 0
         except Exception as err:
             logger_buildsystem.error(f" r[b[*] Hit error building {module}: b[{err}]")
-            result["was_successful"] = 0
+            result = False
 
         # Cleanup TTY output.
         a_time = Util.prettify_seconds(int(time.time()) - a_time)
-        status = "g[b[succeeded]" if result["was_successful"] else "r[b[failed]"
+        status = "g[b[succeeded]" if result else "r[b[failed]"
         status_viewer.release_tty(f"\t{message} {status} (after {a_time})\n")
 
         if warnings:
