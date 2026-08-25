@@ -126,7 +126,6 @@ class BuildContext(PathResolvingOptions):
             "cmake-generator": "",
             "cmake-options": "",
             "configure-flags": "",
-            "custom-build-command": "",
             "cxxflags": "-pipe",
             "directory-layout": "flat",
             "dest-dir": "${MODULE}",

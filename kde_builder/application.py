@@ -64,7 +64,7 @@ class Application:
         ctx = self.context
 
         self.metadata_module = None
-        self.module_resolver = None
+        self.module_resolver: ModuleResolver | None = None
         """ModuleResolver object, that makes a new Module. See generate_module_list()."""
         self._base_pid = os.getpid()  # See finish()
 
@@ -254,6 +254,7 @@ class Application:
         module_resolver.set_explicit_cmdline_selectors(cmdline_selectors)
 
         self.module_resolver = module_resolver
+        self._warn_if_ignored_unexisting_project_or_group(ignored_selectors)
 
         modules: list[Module] = []
         if not cmdline_selectors_len and not opts["special-selectors"] and self.run_mode != "install-login-session-only":
@@ -1371,3 +1372,16 @@ class Application:
                  y[*] Your branch-group value y[\"{user_branch_group}\"] seems to be incorrect.
                  y[*] Possible values are: {'g["' + '"], g["'.join(possible_branch_groups) + '"]"'}.
                 """, preserve_len=1))
+
+    def _warn_if_ignored_unexisting_project_or_group(self, ignored_projects: set[str]):
+        module_resolver = self.module_resolver
+        for el in ignored_projects:
+            repo_data = self.context.projects_db.repositories.get(el, {})
+            if not repo_data:
+                if el not in [*module_resolver.defined_projects, *module_resolver.defined_groups]:
+                    logger_app.warning(f" y[*] ignore-projects contains unexisting project or group: y[{el}]")
+                    continue
+            else:
+                active = repo_data.get("active", False)
+                if not active:
+                    logger_app.warning(f" y[*] ignore-projects contains archived KDE project: y[{el}]")

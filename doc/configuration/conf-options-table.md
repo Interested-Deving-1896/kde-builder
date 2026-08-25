@@ -424,23 +424,6 @@ To change configuration settings for KDE projects, see [cmake-options](#conf-cma
 
 Related command-line option: [--configure-flags](#cmdline-configure-flags).
 
-(conf-custom-build-command)=
-[`custom-build-command`](conf-custom-build-command)
-
-Type: String
-
-This option can be set to run a different command (other than
-`make`, for example) in order to perform the build process.
-kde-builder should in general do the right thing, so you should not
-need to set this option. However, it can be useful to use alternate build
-systems.
-
-The value of this option is used as the command line to run, modified
-by the [make-options](#conf-make-options) option as
-normal.
-
-Related command-line option: [--custom-build-command](#cmdline-custom-build-command).
-
 (conf-cxxflags)=
 [`cxxflags`](conf-cxxflags)
 

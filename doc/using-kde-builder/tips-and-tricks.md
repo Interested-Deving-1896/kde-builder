@@ -58,10 +58,6 @@
 - Annoyed by the default directory layout? Consider changing the `directory-layout`
   configuration file option.
 
-- You can use the `custom-build-command` option to setup a custom build tool
-  (assumed to be make-compatible). For instance, cmake supports the `ninja`
-  tool, and kde-builder can use `ninja` as well via this option.
-
 - You can also wrap kde-builder itself in a script if you want to do things
 like unusual pre-build setup, post-install cleanup, etc. This also goes well
 with the [`--query`](#cmdline-query) option.

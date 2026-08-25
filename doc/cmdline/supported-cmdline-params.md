@@ -198,11 +198,6 @@ The corresponding configuration file option is
 The corresponding configuration file option is
 [configure-flags](#conf-configure-flags).
 
-(cmdline-custom-build-command)=
-[`--custom-build-command`](cmdline-custom-build-command) \<value\>  
-The corresponding configuration file option is
-[custom-build-command](#conf-custom-build-command).
-
 (cmdline-cxxflags)=
 [`--cxxflags`](cmdline-cxxflags) \<value\>  
 The corresponding configuration file option is

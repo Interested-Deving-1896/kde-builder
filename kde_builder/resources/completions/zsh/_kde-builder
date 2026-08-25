@@ -23,7 +23,6 @@ _arguments \
   "(--compile-commands-export --no-compile-commands-export)"{--compile-commands-export,--no-compile-commands-export}"[Generation of a compile_commands.json]" \
   "(--compile-commands-linking --no-compile-commands-linking)"{--compile-commands-linking,--no-compile-commands-linking}"[Creation of symbolic links from compile_commands.json to source directory]" \
   --configure-flags"[Flags to pass to ./configure ]"":argument:" \
-  --custom-build-command"[Run a different command in order to perform the build process]"":argument:" \
   --cxxflags"[Flags to use for building the project]"":argument:" \
   --debug"[Enable debug mode]" \
   "(--dependency-tree --dependency-tree-fullpath)"--dependency-tree"[Print out dependency information on the projects that would be built]" \
