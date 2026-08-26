@@ -91,7 +91,7 @@ class BuildSystemKDECMake(BuildSystem):
         return filtered
 
     @staticmethod
-    def _find_generator_in_c_make_options(args: list[str]) -> str:
+    def _find_generator_in_cmake_options(args: list[str]) -> str:
         next_should_be_generator = 0
         filtered = []
         for i in args:
@@ -191,7 +191,7 @@ class BuildSystemKDECMake(BuildSystem):
     def _determine_cmake_generator(self) -> str:
         module = self.module
         cmake_options = Util.split_quoted_on_whitespace(module.get_option("cmake-options"))
-        generator = next((gen for gen in (self._find_generator_in_c_make_options(cmake_options), module.get_option("cmake-generator"), "Unix Makefiles") if self._check_generator_is_whitelisted(gen)), None)
+        generator = next((gen for gen in (self._find_generator_in_cmake_options(cmake_options), module.get_option("cmake-generator"), "Unix Makefiles") if self._check_generator_is_whitelisted(gen)), None)
 
         if not generator:
             raise ProgramError(f"Unable to determine CMake generator for: {module}")
@@ -267,8 +267,7 @@ class BuildSystemKDECMake(BuildSystem):
     def run_testsuite(self) -> bool:
         module = self.module
 
-        # Note that we do not run safe_make, which should really be called
-        # safe_compile at this point.
+        # Note that we do not run _run_build_system_command().
 
         logger_buildsystem.info("\tRunning test suite...")
         build_command = self.default_build_command()
@@ -290,17 +289,21 @@ class BuildSystemKDECMake(BuildSystem):
     def install_internal(self, cmd_prefix: list[str]) -> bool:
         """
         Re-implementing the one in BuildSystem since in CMake we want to call make install/fast, so it only installs rather than building + installing.
+
+        Returns:
+            bool: False if unable to install, True otherwise.
         """
         module = self.module
         generator = self.get_cmake_generator()
         target = BuildSystemKDECMake.GENERATOR_MAP[generator]["install_target"]
+        args = self.build_system_args(target=target, prefix_options=cmd_prefix)
 
-        return self.safe_make({
-            "target": target,
-            "message": f"Installing g[{module}]",
-            "prefix-options": cmd_prefix,
-            "logfile": "install",
-        })["was_successful"]
+        ret = self._run_build_system_command(
+            message=f"Installing g[{module}]",
+            logname="install",
+            args=args,
+        )
+        return ret
 
     # @override
     def configure_internal(self) -> bool:
@@ -487,3 +490,28 @@ class BuildSystemKDECMake(BuildSystem):
             return result
         # Skip cmake run
         return 0
+
+    # @override
+    def build_system_args(
+            self,
+            target: None | str,
+            make_options: list[str] | None = None,
+            prefix_options: list[str] | None = None,
+        ) -> list[str]:
+        args = self._build_system_args_common(prefix_options)
+        build_command = self.default_build_command()
+
+        if not build_command:
+            logger_buildsystem.error(f" r[b[*] Unable to find the g[{build_command}] executable!")
+            return []
+
+        if make_options is None:
+            make_options = []
+
+        args = args + ["cmake", "--build", "."]
+        if target:
+            args.extend(["--target", target])
+        if make_options:
+            args.extend(["--", *make_options])
+
+        return args

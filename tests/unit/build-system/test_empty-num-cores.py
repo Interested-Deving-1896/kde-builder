@@ -16,12 +16,15 @@ from kde_builder.module.module import Module
 def mock_buildsystem(monkeypatch):
     BuildSystem.made_arguments = []
 
-    # Defang the build command and just record the args passed to it
-    def mock_safe_make(self, opts):
-        BuildSystem.made_arguments = opts["make-options"]
-        return {"was_successful": 1}
+    def mock_run_build_system_command(self, **kwargs):
+        return True
 
-    monkeypatch.setattr(BuildSystem, "safe_make", mock_safe_make)
+    def mock_build_system_args(self, make_options, **kwargs):
+        BuildSystem.made_arguments = make_options
+        return True
+
+    monkeypatch.setattr(BuildSystem, "build_system_args", mock_build_system_args)
+    monkeypatch.setattr(BuildSystem, "_run_build_system_command", mock_run_build_system_command)
 
 
 def test_empty_numcores(mock_buildsystem):

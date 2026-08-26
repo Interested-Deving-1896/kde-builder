@@ -47,10 +47,7 @@ class UtilLoggedSubprocess:
         cmd.child_output_handler = on_child_output
 
         def func(exitcode):
-            resultRef = {
-             "was_successful": exitcode == 0,
-             "warnings"      : warnings,
-            }
+            return = exitcode == 0,
 
         # once ready, call .start() to obtain a result of
         # computation in a separate child process.

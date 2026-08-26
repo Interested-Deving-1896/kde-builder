@@ -197,17 +197,14 @@ class BuildSystem:
 
         return build_options
 
-    def build_internal(self) -> dict:
-        """
-        Return dict with build results (see safe_make).
-        """
+    def build_internal(self) -> bool:
         build_options = self.get_build_options()
-        ret = self.safe_make({
-            "target": None,
-            "message": "Compiling...",
-            "make-options": build_options,
-            "logbase": "build",
-        })
+        args = self.build_system_args(target=None, make_options=build_options)
+        ret = self._run_build_system_command(
+            message="Compiling...",
+            logname="build",
+            args=args,
+        )
         return ret
 
     def configure_internal(self) -> bool:
@@ -240,30 +237,38 @@ class BuildSystem:
         Install a module (that has already been built, tested, etc.).
 
         All options passed are prefixed to the eventual command to be run.
-        Returns boolean false if unable to install, true otherwise.
+
+        Returns:
+            bool: False if unable to install, True otherwise.
         """
         module = self.module
 
-        return self.safe_make({
-            "target": "install",
-            "message": f"Installing g[{module}]",
-            "prefix-options": cmd_prefix,
-        })["was_successful"]
+        args = self.build_system_args(target="install", prefix_options=cmd_prefix)
+        ret = self._run_build_system_command(
+            message=f"Installing g[{module}]",
+            logname="install",
+            args=args,
+        )
+        return ret
 
     def uninstall_internal(self, cmd_prefix: list[str]) -> bool:
         """
         Uninstall a previously installed module.
 
         All options passed are prefixed to the eventual command to be run.
-        Returns boolean false if unable to uninstall, true otherwise.
+
+        Returns:
+            bool: False if unable to uninstall, True otherwise.
         """
         module = self.module
         module.unset_persistent_option("last-install-rev")
-        return self.safe_make({
-            "target": "uninstall",
-            "message": f"Uninstalling g[{module}]",
-            "prefix-options": cmd_prefix,
-        })["was_successful"]
+        args = self.build_system_args(target="uninstall", prefix_options=cmd_prefix)
+        ret = self._run_build_system_command(
+            message=f"Uninstalling g[{module}]",
+            logname="uninstall",
+            args=args,
+        )
+        return ret
 
     def clean_build_system(self) -> int:
         """
@@ -323,57 +328,23 @@ class BuildSystem:
 
         return 1
 
-    def safe_make(self, opts: dict) -> dict:
+    def _build_system_args_common(
+            self,
+            prefix_options: list[str] | None = None,
+        ) -> list[str]:
         """
-        Run the build command with the arguments given by the passed dict.
+        Prepare common arguments (i.e. valid for all build systems) for the build system command.
 
-        Passed dict is laid out as:
-        ::
-
-            {
-               target         : None, or a valid build target e.g. "install",
-               message        : "Compiling.../Installing.../etc."
-               make-options   : [ list of command line arguments to pass to make. See
-                                   make-options ],
-               prefix-options : [ list of command line arguments to prefix *before* the
-                                   make command, used for make-install-prefix support for
-                                   e.g. sudo ],
-               logbase        : "base-log-filename",
-            }
-
-        target and message are required. logbase is required if target is left
-        undefined, but otherwise defaults to the same value as target.
-
-        Note that the make command is based on the results of the "build_commands"
-        function which should be overridden if necessary by subclasses. Each
-        command should be the command name (i.e. no path).
-
-        The first command name found which resolves to an executable on the
-        system will be used, if no command this function will fail.
-
-        Returns a dict:
-        ::
-
-            {
-              was_successful : bool  # if successful
-              warnings       : int  # num of warnings
-            }
+        Args:
+            prefix_options: List of command line arguments to prefix *before* the
+                make command, used for make-install-prefix support for e.g. sudo
         """
         module = self.module
 
-        build_command = self.default_build_command()
+        if prefix_options is None:
+            prefix_options = []
 
-        if not build_command:
-            logger_buildsystem.error(f" r[b[*] Unable to find the g[{build_command}] executable!")
-            return {"was_successful": 0}
-
-        # Simplify code by forcing lists to exist.
-        if "prefix-options" not in opts:
-            opts["prefix-options"] = []
-        if "make-options" not in opts:
-            opts["make-options"] = []
-
-        prefix_opts = opts["prefix-options"]
+        prefix_opts = prefix_options
 
         taskset_args = []
         taskset_opt = module.get_option("taskset-cpu-list")
@@ -392,35 +363,66 @@ class BuildSystem:
             prefix_opts.insert(1, "-S")  # Add -S right after "sudo"
 
         # Assemble arguments
-        args = [*prefix_opts, *taskset_args, build_command]
-        if opts["target"]:
-            args.append(opts["target"])
-        args.extend(opts["make-options"])
+        args = [*prefix_opts, *taskset_args]
+        return args
 
-        logname = opts.get("logbase", opts.get("logfile", opts.get("target", "")))  # pl2py: if all of these are undefined, logname remains undef in perl. But undef in perl becomes empty string when stringified.
-
-        builddir = module.fullpath("build")
-        builddir = re.sub(r"/*$", "", builddir)  # Remove trailing /
-
-        Util.p_chdir(builddir)
-
-        return self._run_build_command(opts["message"], logname, args)
-
-    def _run_build_command(self, message: str, filename: str, args: list[str]) -> dict:
+    def build_system_args(
+            self,
+            target: None | str,
+            make_options: list[str] | None = None,
+            prefix_options: list[str] | None = None,
+        ) -> list[str]:
         """
-        Run make and process the build process output in order to provide completion updates.
+        Prepare arguments for the build system command.
+
+        Note that the make/ninja command is based on the results of the `build_commands()`
+        function which should be overridden if necessary by subclasses. Each
+        command should be the command name (i.e. no path).
+
+        The first command name found which resolves to an executable on the
+        system will be used.
 
         Args:
-            message: The message to display to the user while the build happens.
-            filename: The name of the log file to use (relative to the log directory).
+            make_options: List of command line arguments to pass to make/ninja.
+            target: None, or a valid build target e.g. "install".
+            prefix_options: List of command line arguments to prefix *before* the
+                make/ninja command, used for make-install-prefix support for e.g. sudo.
+        """
+        args = self._build_system_args_common(prefix_options)
+        build_command = self.default_build_command()
+
+        if not build_command:
+            logger_buildsystem.error(f" r[b[*] Unable to find the g[{build_command}] executable!")
+            return []
+
+        args.append(build_command)
+        if target:
+            args.append(target)
+
+        if make_options is None:
+            make_options = []
+        args.extend(make_options)
+
+        return args
+
+    def _run_build_system_command(self, message: str, logname: str, args: list[str]) -> bool:
+        """
+        Run make/ninja/cmake and process the output in order to provide progress updates.
+
+        Args:
+            message: The message to display to the user while the build happens ("Compiling...", "Installing...", etc.).
+            logname: The name of the log file to use (relative to the log directory).
             args: An array with the command and its arguments. i.e. ["command", "arg1", "arg2"]
 
         Returns:
-             Dict as defined by safe_make
+            bool: True on success, False on failure.
         """
+        if not args:
+            return False
+
         module = self.module
         builddir = module.fullpath("build")
-        result = {"was_successful": 0}
+        result = False
         ctx = module.context
 
         # There are situations when we don't want progress output:
@@ -429,7 +431,7 @@ class BuildSystem:
         if not sys.stderr.isatty() or logger_logged_cmd.isEnabledFor(logging.DEBUG):
             logger_buildsystem.warning(f"\t{message}")
 
-            result["was_successful"] = Util.good_exitcode(Util.run_logged(module, filename, builddir, args))
+            result = Util.good_exitcode(Util.run_logged(module, logname, builddir, args))
 
             return result
 
@@ -448,7 +450,6 @@ class BuildSystem:
             # So to keep that initial line "        Installing ark", we need to add a new line after statusView prints its line and moves cursor to the beginning of line.
             print("\n", end="")
 
-        # TODO More details
         warnings = 0
 
         def on_child_output(input_line):
@@ -479,23 +480,20 @@ class BuildSystem:
                 nonlocal warnings
                 warnings += 1
 
-        cmd = UtilLoggedSubprocess().module(module).log_to(filename).chdir_to(builddir).set_command(args)
+        cmd = UtilLoggedSubprocess().module(module).log_to(logname).chdir_to(builddir).set_command(args)
 
         cmd.child_output_handler = on_child_output
 
         try:
             exitcode = cmd.start()
-            result = {
-                "was_successful": exitcode == 0,
-                "warnings": warnings,
-            }
+            result = exitcode == 0
         except Exception as err:
             logger_buildsystem.error(f" r[b[*] Hit error building {module}: b[{err}]")
-            result["was_successful"] = 0
+            result = False
 
         # Cleanup TTY output.
         a_time = Util.prettify_seconds(int(time.time()) - a_time)
-        status = "g[b[succeeded]" if result["was_successful"] else "r[b[failed]"
+        status = "g[b[succeeded]" if result else "r[b[failed]"
         status_viewer.release_tty(f"\t{message} {status} (after {a_time})\n")
 
         if warnings:
