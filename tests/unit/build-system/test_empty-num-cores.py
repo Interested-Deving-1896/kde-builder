@@ -19,7 +19,7 @@ def mock_buildsystem(monkeypatch):
     # Defang the build command and just record the args passed to it
     def mock_safe_make(self, make_options, **kwargs):
         BuildSystem.made_arguments = make_options
-        return {"was_successful": 1}
+        return True
 
     monkeypatch.setattr(BuildSystem, "safe_make", mock_safe_make)
 
