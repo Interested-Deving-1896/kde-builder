@@ -403,16 +403,16 @@ class BuildSystem:
 
         Util.p_chdir(builddir)
 
-        ret = self._run_build_command(message, logname, args)
+        ret = self._run_build_system_command(message, logname, args)
         return ret
 
-    def _run_build_command(self, message: str, filename: str, args: list[str]) -> bool:
+    def _run_build_system_command(self, message: str, logname: str, args: list[str]) -> bool:
         """
-        Run make and process the build process output in order to provide completion updates.
+        Run make/ninja/cmake and process the output in order to provide progress updates.
 
         Args:
             message: The message to display to the user while the build happens.
-            filename: The name of the log file to use (relative to the log directory).
+            logname: The name of the log file to use (relative to the log directory).
             args: An array with the command and its arguments. i.e. ["command", "arg1", "arg2"]
 
         Returns:
@@ -429,7 +429,7 @@ class BuildSystem:
         if not sys.stderr.isatty() or logger_logged_cmd.isEnabledFor(logging.DEBUG):
             logger_buildsystem.warning(f"\t{message}")
 
-            result = Util.good_exitcode(Util.run_logged(module, filename, builddir, args))
+            result = Util.good_exitcode(Util.run_logged(module, logname, builddir, args))
 
             return result
 
@@ -478,7 +478,7 @@ class BuildSystem:
                 nonlocal warnings
                 warnings += 1
 
-        cmd = UtilLoggedSubprocess().module(module).log_to(filename).chdir_to(builddir).set_command(args)
+        cmd = UtilLoggedSubprocess().module(module).log_to(logname).chdir_to(builddir).set_command(args)
 
         cmd.child_output_handler = on_child_output
 
