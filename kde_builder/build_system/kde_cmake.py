@@ -267,8 +267,7 @@ class BuildSystemKDECMake(BuildSystem):
     def run_testsuite(self) -> bool:
         module = self.module
 
-        # Note that we do not run safe_make, which should really be called
-        # safe_compile at this point.
+        # Note that we do not run _run_build_system_command().
 
         logger_buildsystem.info("\tRunning test suite...")
         build_command = self.default_build_command()
@@ -297,12 +296,12 @@ class BuildSystemKDECMake(BuildSystem):
         module = self.module
         generator = self.get_cmake_generator()
         target = BuildSystemKDECMake.GENERATOR_MAP[generator]["install_target"]
+        args = self.build_system_args(target=target, prefix_options=cmd_prefix)
 
-        ret = self.safe_make(
-            target=target,
+        ret = self._run_build_system_command(
             message=f"Installing g[{module}]",
-            prefix_options=cmd_prefix,
             logname="install",
+            args=args,
         )
         return ret
 

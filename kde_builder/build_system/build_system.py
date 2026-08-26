@@ -199,11 +199,11 @@ class BuildSystem:
 
     def build_internal(self) -> bool:
         build_options = self.get_build_options()
-        ret = self.safe_make(
-            target=None,
+        args = self.build_system_args(target=None, make_options=build_options)
+        ret = self._run_build_system_command(
             message="Compiling...",
-            make_options=build_options,
             logname="build",
+            args=args,
         )
         return ret
 
@@ -243,10 +243,11 @@ class BuildSystem:
         """
         module = self.module
 
-        ret = self.safe_make(
-            target="install",
+        args = self.build_system_args(target="install", prefix_options=cmd_prefix)
+        ret = self._run_build_system_command(
             message=f"Installing g[{module}]",
-            prefix_options=cmd_prefix,
+            logname="install",
+            args=args,
         )
         return ret
 
@@ -261,10 +262,11 @@ class BuildSystem:
         """
         module = self.module
         module.unset_persistent_option("last-install-rev")
-        ret = self.safe_make(
-            target="uninstall",
+        args = self.build_system_args(target="uninstall", prefix_options=cmd_prefix)
+        ret = self._run_build_system_command(
             message=f"Uninstalling g[{module}]",
-            prefix_options=cmd_prefix,
+            logname="uninstall",
+            args=args,
         )
         return ret
 
@@ -326,51 +328,21 @@ class BuildSystem:
 
         return 1
 
-    def safe_make(
+    def _build_system_args_common(
             self,
-            target: None | str,
-            message: str,
-            make_options: list[str] | None = None,
             prefix_options: list[str] | None = None,
-            logname: str = "",
-        ) -> bool:
+        ) -> list[str]:
         """
-        Run the build command.
+        Prepare common arguments (i.e. valid for all build systems) for the build system command.
 
         Args:
-            target: None, or a valid build target e.g. "install".
-            message: "Compiling...", "Installing...", etc.
-            make_options: List of command line arguments to pass to make
             prefix_options: List of command line arguments to prefix *before* the
                 make command, used for make-install-prefix support for e.g. sudo
-            logname: base log file name
-
-        target and message are required. logname is required if target is left
-        undefined, but otherwise defaults to the same value as target.
-
-        Note that the make command is based on the results of the `build_commands()`
-        function which should be overridden if necessary by subclasses. Each
-        command should be the command name (i.e. no path).
-
-        The first command name found which resolves to an executable on the
-        system will be used, if no command this function will fail.
-
-        Returns:
-            bool: True on success, False on failure.
         """
         module = self.module
 
-        build_command = self.default_build_command()
-
-        if not build_command:
-            logger_buildsystem.error(f" r[b[*] Unable to find the g[{build_command}] executable!")
-            return False
-
-        # Simplify code by forcing lists to exist.
         if prefix_options is None:
             prefix_options = []
-        if make_options is None:
-            make_options = []
 
         prefix_opts = prefix_options
 
@@ -391,33 +363,63 @@ class BuildSystem:
             prefix_opts.insert(1, "-S")  # Add -S right after "sudo"
 
         # Assemble arguments
-        args = [*prefix_opts, *taskset_args, build_command]
+        args = [*prefix_opts, *taskset_args]
+        return args
+
+    def build_system_args(
+            self,
+            target: None | str,
+            make_options: list[str] | None = None,
+            prefix_options: list[str] | None = None,
+        ) -> list[str]:
+        """
+        Prepare arguments for the build system command.
+
+        Note that the make/ninja command is based on the results of the `build_commands()`
+        function which should be overridden if necessary by subclasses. Each
+        command should be the command name (i.e. no path).
+
+        The first command name found which resolves to an executable on the
+        system will be used.
+
+        Args:
+            make_options: List of command line arguments to pass to make/ninja.
+            target: None, or a valid build target e.g. "install".
+            prefix_options: List of command line arguments to prefix *before* the
+                make/ninja command, used for make-install-prefix support for e.g. sudo.
+        """
+        args = self._build_system_args_common(prefix_options)
+        build_command = self.default_build_command()
+
+        if not build_command:
+            logger_buildsystem.error(f" r[b[*] Unable to find the g[{build_command}] executable!")
+            return []
+
+        args.append(build_command)
         if target:
             args.append(target)
+
+        if make_options is None:
+            make_options = []
         args.extend(make_options)
 
-        logname = logname or target or ""
-
-        builddir = module.fullpath("build")
-        builddir = re.sub(r"/*$", "", builddir)  # Remove trailing /
-
-        Util.p_chdir(builddir)
-
-        ret = self._run_build_system_command(message, logname, args)
-        return ret
+        return args
 
     def _run_build_system_command(self, message: str, logname: str, args: list[str]) -> bool:
         """
         Run make/ninja/cmake and process the output in order to provide progress updates.
 
         Args:
-            message: The message to display to the user while the build happens.
+            message: The message to display to the user while the build happens ("Compiling...", "Installing...", etc.).
             logname: The name of the log file to use (relative to the log directory).
             args: An array with the command and its arguments. i.e. ["command", "arg1", "arg2"]
 
         Returns:
             bool: True on success, False on failure.
         """
+        if not args:
+            return False
+
         module = self.module
         builddir = module.fullpath("build")
         result = False
