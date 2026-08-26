@@ -97,36 +97,6 @@ class Cmdline:
 
         parser = argparse.ArgumentParser(add_help=False, allow_abbrev=False)
 
-        # Create a code as a string, containing functions to be run for flag options
-        flag_handlers = ""
-        for key in BuildContext().global_options_with_negatable_form.keys():
-            if key == "async":  # as async is reserved word in python, we use such way to access it
-                flag_handlers += dedent("""
-                    if vars(args)["async"] is not None:
-                        found_options["async"] = vars(args)["async"]
-
-                    """)
-                continue
-
-            opt_name = key.replace("-", "_")
-
-            flag_handlers += dedent(f"""
-            if args.{opt_name} is not None:
-                found_options[\"{key}\"] = args.{opt_name}
-
-            """)
-
-        # Similar procedure for global options (they require one argument)
-        global_opts_handler = ""
-        for key in BuildContext().global_options_with_parameter.keys():
-            opt_name = key.replace("-", "_")
-
-            global_opts_handler += dedent(f"""
-            if args.{opt_name}:
-                found_options[\"{key}\"] = args.{opt_name}[0]
-
-            """)
-
         supported_options = Cmdline._supported_options()
 
         # If we have --run option, grab all the rest arguments to pass to the corresponding parser.
@@ -158,57 +128,46 @@ class Cmdline:
 
         parser.add_argument("--set-project-option-value", type=validate_set_project_option_value, action="append")
 
-        # Generate the code as a string with `parser.add_argument(...) ...`.
+        # Handle `parser.add_argument(...)`.
         # This is done by parsing supported_options and extracting option variants (long, alias, short ...), parameter numbers and default values.
-        string_of_parser_add_arguments = ""
         for key in supported_options:
             # global flags and global options are not duplicating options defined in options in _supported_options(). That function ensures that.
 
             line = key
-            nargs = None
-            action = None
+            kwargs = {}
+
             if line.endswith("=s"):
-                nargs = 1
+                kwargs["nargs"] = 1
                 line = line.removesuffix("=s")
             elif line.endswith("!"):  # negatable boolean
-                action = "argparse.BooleanOptionalAction"
+                kwargs["action"] = argparse.BooleanOptionalAction
                 line = line.removesuffix("!")
             elif line.endswith("=s{,}"):  # one or more option values
-                nargs = "\"+\""
+                kwargs["nargs"] = "+"
                 line = line.removesuffix("=s{,}")
             elif line.endswith(":s"):  # optional string argument
-                nargs = "\"?\""
+                kwargs["nargs"] = "?"
                 line = line.removesuffix(":s")
             elif line.endswith("=i"):
-                nargs = 1
+                kwargs["nargs"] = 1
                 line = line.removesuffix("=i")
             elif line.endswith(":10"):  # for --nice
-                nargs = "\"?\""
-                nargs += ", type=int, default=10"
+                kwargs["nargs"] = "?"
+                kwargs["type"] = int
+                kwargs["default"] = 10
                 line = line.removesuffix(":10")
             else:  # for example, for "-p" to not eat selector.
-                action = "\"store_true\""
+                kwargs["action"] = "store_true"
 
             parts = line.split("|")
             dashed_parts = []
             for part in parts:
                 if len(part) == 1:
-                    dashed_parts.append("\"-" + part + "\"")
+                    dashed_parts.append("-" + part)
                 else:
-                    dashed_parts.append("\"--" + part + "\"")
+                    dashed_parts.append("--" + part)
 
-            specstr = ", ".join(dashed_parts)
-            if nargs:
-                specstr += f", nargs={nargs}"
-            elif action:
-                specstr += f", action={action}"
-
-            # example of string: parser.add_argument("--show-info", action="store_true")
-            string_of_parser_add_arguments += dedent(f"""
-            parser.add_argument({specstr})
-
-            """)
-        exec(string_of_parser_add_arguments)
+            parser.add_argument(*dashed_parts, **kwargs)
 
         # Actually read the options.
         args, unknown_args = parser.parse_known_args(options)  # unknown_args - Required to read non-option args
@@ -283,8 +242,20 @@ class Cmdline:
         if args.ignore_projects:
             opts["ignore-projects"] = args.ignore_projects
         # </editor-fold desc="arg functions">
-        exec(flag_handlers)
-        exec(global_opts_handler)
+
+        # handling flag options
+        for key in BuildContext().global_options_with_negatable_form.keys():
+            opt_name = key.replace("-", "_")
+            val = getattr(args, opt_name)
+            if val is not None:
+                found_options[key] = val
+
+        # handling options with one argument
+        for key in BuildContext().global_options_with_parameter.keys():
+            opt_name = key.replace("-", "_")
+            val = getattr(args, opt_name)
+            if val:
+                found_options[key] = val[0]
 
         # Module selectors (i.e. an actual argument)
         for unknown_arg in unknown_args:
