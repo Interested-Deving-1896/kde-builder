@@ -490,3 +490,28 @@ class BuildSystemKDECMake(BuildSystem):
             return result
         # Skip cmake run
         return 0
+
+    # @override
+    def build_system_args(
+            self,
+            target: None | str,
+            make_options: list[str] | None = None,
+            prefix_options: list[str] | None = None,
+        ) -> list[str]:
+        args = self._build_system_args_common(prefix_options)
+        build_command = self.default_build_command()
+
+        if not build_command:
+            logger_buildsystem.error(f" r[b[*] Unable to find the g[{build_command}] executable!")
+            return []
+
+        if make_options is None:
+            make_options = []
+
+        args = args + ["cmake", "--build", "."]
+        if target:
+            args.extend(["--target", target])
+        if make_options:
+            args.extend(["--", *make_options])
+
+        return args
