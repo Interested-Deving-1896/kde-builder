@@ -91,7 +91,7 @@ class BuildSystemKDECMake(BuildSystem):
         return filtered
 
     @staticmethod
-    def _find_generator_in_c_make_options(args: list[str]) -> str:
+    def _find_generator_in_cmake_options(args: list[str]) -> str:
         next_should_be_generator = 0
         filtered = []
         for i in args:
@@ -191,7 +191,7 @@ class BuildSystemKDECMake(BuildSystem):
     def _determine_cmake_generator(self) -> str:
         module = self.module
         cmake_options = Util.split_quoted_on_whitespace(module.get_option("cmake-options"))
-        generator = next((gen for gen in (self._find_generator_in_c_make_options(cmake_options), module.get_option("cmake-generator"), "Unix Makefiles") if self._check_generator_is_whitelisted(gen)), None)
+        generator = next((gen for gen in (self._find_generator_in_cmake_options(cmake_options), module.get_option("cmake-generator"), "Unix Makefiles") if self._check_generator_is_whitelisted(gen)), None)
 
         if not generator:
             raise ProgramError(f"Unable to determine CMake generator for: {module}")
