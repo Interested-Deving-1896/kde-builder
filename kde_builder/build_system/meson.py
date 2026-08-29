@@ -3,6 +3,8 @@
 #
 # SPDX-License-Identifier: GPL-2.0-or-later
 
+from typing import override
+
 from kde_builder.build_system.build_system import BuildSystem
 from kde_builder.debug import KBLogger
 from kde_builder.util.util import Util
@@ -21,11 +23,11 @@ class BuildSystemMeson(BuildSystem):
     """
 
     @staticmethod
-    # @override
+    @override
     def name() -> str:
         return "meson"
 
-    # @override
+    @override
     def configure_internal(self) -> bool:
         module = self.module
         sourcedir = module.fullpath("source")
@@ -37,23 +39,23 @@ class BuildSystemMeson(BuildSystem):
         exitcode = Util.run_logged(module, "meson-setup", sourcedir, ["meson", "setup", builddir, "--prefix", installdir, *setup_options])
         return Util.good_exitcode(exitcode)
 
-    # @override
+    @override
     def supports_auto_parallelism(self) -> bool:
         return True  # meson requires ninja so supports this by default
 
-    # @override
+    @override
     def build_options_name(self) -> str:
         return "ninja-options"
 
-    # @override
+    @override
     def build_commands(self) -> list[str]:
         return ["ninja"]
 
-    # @override
+    @override
     def required_programs(self) -> list[str]:
         return ["meson", "ninja"]
 
     @staticmethod
-    # @override
+    @override
     def configured_module_file_name() -> str:
         return "build.ninja"

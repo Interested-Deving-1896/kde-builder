@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 import glob
+from typing import override
 
 from kde_builder.build_system.build_system import BuildSystem
 from kde_builder.debug import Debug
@@ -22,11 +23,11 @@ class BuildSystemQMake6(BuildSystem):
     possible_qmake_names = ["qmake-qt6", "qmake6", "qmake-mac", "qmake"]
 
     @staticmethod
-    # @override
+    @override
     def name() -> str:
         return "qmake6"
 
-    # @override
+    @override
     def required_programs(self) -> list[str]:
         return ["qmake"]
 
@@ -42,7 +43,7 @@ class BuildSystemQMake6(BuildSystem):
         """
         return next((p for p in cls.possible_qmake_names if Util.locate_exe(p)), None)
 
-    # @override
+    @override
     def configure_internal(self) -> bool:
         module = self.module
         builddir = module.fullpath("build")

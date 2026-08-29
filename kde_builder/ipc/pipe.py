@@ -5,6 +5,7 @@
 
 import os
 import struct
+from typing import override
 
 from kde_builder.ipc.ipc import IPC
 from kde_builder.kb_exception import KBRuntimeError
@@ -35,11 +36,11 @@ class IPCPipe(IPC):
         self.fh = os.fdopen(self.pipe_read, "rb", 0)  # Disable buffering and any possibility of IO "interpretation" of the bytes
 
     @staticmethod
-    # @override
+    @override
     def supports_concurrency() -> bool:
         return True
 
-    # @override
+    @override
     def send_message(self, msg: bytes) -> bool:
         """
         Send message.
@@ -62,7 +63,7 @@ class IPCPipe(IPC):
         result = fh.read(length)
         return result
 
-    # @override
+    @override
     def receive_message(self) -> bytes:
         # Read unsigned short with msg length, then the message
         msg_length = self._read_number_of_bytes(2)
@@ -75,6 +76,6 @@ class IPCPipe(IPC):
 
         return self._read_number_of_bytes(msg_length)
 
-    # @override
+    @override
     def close(self):
         self.fh.close()

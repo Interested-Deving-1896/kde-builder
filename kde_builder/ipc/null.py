@@ -3,6 +3,8 @@
 #
 # SPDX-License-Identifier: GPL-2.0-or-later
 
+from typing import override
+
 from kde_builder.ipc.ipc import IPC
 
 
@@ -16,12 +18,12 @@ class IPCNull(IPC):
         self.msgList: list[bytes] = []
         """List of messages."""
 
-    # @override
+    @override
     def send_message(self, msg: bytes) -> bool:
         self.msgList.append(msg)
         return True
 
-    # @override
+    @override
     def receive_message(self) -> bytes:
         if not len(self.msgList) > 0:
             return b""

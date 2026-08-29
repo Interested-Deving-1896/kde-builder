@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 import os
+from typing import override
 
 from kde_builder.build_system.build_system import BuildSystem
 from kde_builder.debug import KBLogger
@@ -22,7 +23,7 @@ class BuildSystemAutotools(BuildSystem):
     """
 
     @staticmethod
-    # @override
+    @override
     def name() -> str:
         return "autotools"
 
@@ -66,7 +67,7 @@ class BuildSystemAutotools(BuildSystem):
 
         return configure_command
 
-    # @override
+    @override
     def configure_internal(self) -> bool:
         module = self.module
         sourcedir = module.fullpath("source")

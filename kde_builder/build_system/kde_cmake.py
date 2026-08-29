@@ -8,6 +8,7 @@ from __future__ import annotations
 import os.path
 import re
 import sys
+from typing import override
 
 from kde_builder.build_system.build_system import BuildSystem
 from kde_builder.debug import KBLogger
@@ -170,11 +171,11 @@ class BuildSystemKDECMake(BuildSystem):
             self.cmake_toolchain = self._determine_cmake_toolchain()
         return self.cmake_toolchain
 
-    # @override
+    @override
     def has_toolchain(self) -> bool:
         return self.get_cmake_toolchain() != ""
 
-    # @override
+    @override
     def supports_auto_parallelism(self) -> bool:
         """
         Return true if CMake is run with ninja, which supports setting -j automatically.
@@ -203,11 +204,11 @@ class BuildSystemKDECMake(BuildSystem):
         return self.cmake_generator
 
     @staticmethod
-    # @override
+    @override
     def name() -> str:
         return "KDE CMake"
 
-    # @override
+    @override
     def prepare_module_build_environment(self) -> None:
         """
         Set up any needed environment variables, build context settings, etc., in preparation for the build and install phases.
@@ -238,7 +239,7 @@ class BuildSystemKDECMake(BuildSystem):
             module.prepend_environment_value("CMAKE_PREFIX_PATH", qt_installdir)
             module.prepend_environment_value("CMAKE_MODULE_PATH", f"{qt_installdir}/lib/cmake")
 
-    # @override
+    @override
     def required_programs(self) -> list[str]:
         """
         Return a list of executable names that must be present to even bother attempting to use this build system.
@@ -249,7 +250,7 @@ class BuildSystemKDECMake(BuildSystem):
         required = BuildSystemKDECMake.GENERATOR_MAP[generator]["required_programs"]
         return required
 
-    # @override
+    @override
     def build_commands(self) -> list[str]:
         """
         Return a list of possible build commands to run, any one of which should be supported by the build system.
@@ -259,11 +260,11 @@ class BuildSystemKDECMake(BuildSystem):
         return progs
 
     @staticmethod
-    # @override
+    @override
     def configured_module_file_name() -> str:
         return "cmake_install.cmake"
 
-    # @override
+    @override
     def run_testsuite(self) -> bool:
         module = self.module
 
@@ -285,7 +286,7 @@ class BuildSystemKDECMake(BuildSystem):
             logger_buildsystem.info("\t  All tests ran successfully.")
         return result
 
-    # @override
+    @override
     def install_internal(self, cmd_prefix: list[str]) -> bool:
         """
         Re-implementing the one in BuildSystem since in CMake we want to call make install/fast, so it only installs rather than building + installing.
@@ -305,7 +306,7 @@ class BuildSystemKDECMake(BuildSystem):
         )
         return ret
 
-    # @override
+    @override
     def configure_internal(self) -> bool:
         module = self.module
 
@@ -323,7 +324,7 @@ class BuildSystemKDECMake(BuildSystem):
                 Util.remake_symlink(f"{builddir}/compile_commands.json", f"{srcdir}/compile_commands.json")
         return True
 
-    # @override
+    @override
     def build_options_name(self) -> str:
         generator = self.get_cmake_generator()
         options_name = BuildSystemKDECMake.GENERATOR_MAP[generator]["options_name"]
@@ -491,7 +492,7 @@ class BuildSystemKDECMake(BuildSystem):
         # Skip cmake run
         return 0
 
-    # @override
+    @override
     def build_system_args(
             self,
             targets: None | list[str],

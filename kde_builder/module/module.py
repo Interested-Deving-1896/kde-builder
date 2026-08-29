@@ -14,6 +14,7 @@ import shutil
 import sys
 import traceback
 from typing import TYPE_CHECKING
+from typing import override
 
 from kde_builder.build_system.autotools import BuildSystemAutotools
 from kde_builder.build_system.build_system import BuildSystem
@@ -450,11 +451,11 @@ class Module(PathResolvingOptions):
         for key, value in module_set_env_dict.items():
             self.queue_environment_variable(key, value)
 
-    # @override
+    @override
     def get_log_dir(self) -> str:
         return self.context.get_log_dir_for(self)
 
-    # @override
+    @override
     def get_log_path(self, path: str) -> str:
         return self.context.get_log_path_for(self, path)
 
@@ -545,7 +546,7 @@ class Module(PathResolvingOptions):
         logger_module.info("")  # Print empty line.
         return return_value
 
-    # @override
+    @override
     def set_option(self, opt_name: str, opt_val) -> None:
         """
         Set a configuration option that can be checked later using :meth:`get_option()`.
@@ -601,7 +602,7 @@ class Module(PathResolvingOptions):
 
         super().set_option(opt_name, opt_val)
 
-    # @override
+    @override
     def get_option(self, key: str, level_limit="allow-inherit") -> str | dict:
         """
         Return an option value for a given module.
@@ -965,7 +966,7 @@ class Module(PathResolvingOptions):
         if os.path.exists(logdir):  # pl2py: in unit test, the log dir is not created. In perl symlinking just does not care and proceeds, but in python the exception is thrown. So we make this check.
             os.symlink(f"{logfile}", f"{logdir}/error.log")
 
-    # @override
+    @override
     def verify_option_value_type(self, option_name, option_value) -> None:
         """
         Ensure we are setting the correct type for value of option.

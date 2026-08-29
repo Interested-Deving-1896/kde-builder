@@ -13,6 +13,7 @@ import re
 import sys
 import tempfile
 from pathlib import Path
+from typing import override
 
 from kde_builder.debug import Debug
 from kde_builder.debug import KBLogger
@@ -331,7 +332,7 @@ class BuildContext(PathResolvingOptions):
         except Exception as e:
             logger_buildcontext.warning(f" y[*] Failed to close lock: {e}")
 
-    # @override
+    @override
     def get_log_dir(self) -> str:
         return self.get_log_dir_for(self)
 
@@ -371,7 +372,7 @@ class BuildContext(PathResolvingOptions):
 
         return log_dir
 
-    # @override
+    @override
     def get_log_path(self, path: str) -> str:
         return self.get_log_path_for(self, path)
 
@@ -564,7 +565,7 @@ class BuildContext(PathResolvingOptions):
         modules = [module for module in modules if module.name in self.errors]
         return modules
 
-    # @override
+    @override
     def set_option(self, opt_name: str, opt_val) -> None:
 
         # Special case handling.
@@ -758,7 +759,7 @@ class BuildContext(PathResolvingOptions):
         self.metadata = Metadata(repo_metadata_fullpath)
         self.branch_group_resolver = ModuleBranchGroupResolver(self.metadata.branch_groups)
 
-    # @override
+    @override
     def verify_option_value_type(self, option_name, option_value) -> None:
         if option_name in self.all_boolean_options and not isinstance(option_value, bool):
             raise SetOptionError(option_name, f"Option \"{option_name}\" has invalid boolean value \"{option_value}\".")

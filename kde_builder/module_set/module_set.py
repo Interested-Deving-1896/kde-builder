@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+from typing import override
 
 from kde_builder.debug import KBLogger
 from kde_builder.kb_exception import NoKDEProjectsFound
@@ -74,7 +75,7 @@ class ModuleSet(OptionsBase):
         order_in_list: int = self.module_order.get(f"{new_module}", len(self.modules_to_find))
         new_module.create_id = start_order + order_in_list
 
-    # @override
+    @override
     def set_option(self, opt_name: str, opt_val) -> None:
         """
         Handle module-set specific options for OptionsBase's set_option.
@@ -141,7 +142,7 @@ class ModuleSet(OptionsBase):
         self.project_objects_list = module_list
         return module_list
 
-    # @override
+    @override
     def verify_option_value_type(self, option_name, option_value) -> None:
         """
         Ensure we are setting the correct type for value of option.
