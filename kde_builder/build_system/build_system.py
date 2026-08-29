@@ -199,7 +199,7 @@ class BuildSystem:
 
     def build_internal(self) -> bool:
         build_options = self.get_build_options()
-        args = self.build_system_args(target=None, make_options=build_options)
+        args = self.build_system_args(targets=None, make_options=build_options)
         ret = self._run_build_system_command(
             message="Compiling...",
             logname="build",
@@ -243,7 +243,7 @@ class BuildSystem:
         """
         module = self.module
 
-        args = self.build_system_args(target="install", prefix_options=cmd_prefix)
+        args = self.build_system_args(targets=["install"], prefix_options=cmd_prefix)
         ret = self._run_build_system_command(
             message=f"Installing g[{module}]",
             logname="install",
@@ -262,7 +262,7 @@ class BuildSystem:
         """
         module = self.module
         module.unset_persistent_option("last-install-rev")
-        args = self.build_system_args(target="uninstall", prefix_options=cmd_prefix)
+        args = self.build_system_args(targets=["uninstall"], prefix_options=cmd_prefix)
         ret = self._run_build_system_command(
             message=f"Uninstalling g[{module}]",
             logname="uninstall",
@@ -368,7 +368,7 @@ class BuildSystem:
 
     def build_system_args(
             self,
-            target: None | str,
+            targets: None | list[str],
             make_options: list[str] | None = None,
             prefix_options: list[str] | None = None,
         ) -> list[str]:
@@ -384,7 +384,7 @@ class BuildSystem:
 
         Args:
             make_options: List of command line arguments to pass to make/ninja.
-            target: None, or a valid build target e.g. "install".
+            targets: None, or a valid build targets list e.g. ["install"].
             prefix_options: List of command line arguments to prefix *before* the
                 make/ninja command, used for make-install-prefix support for e.g. sudo.
         """
@@ -396,8 +396,8 @@ class BuildSystem:
             return []
 
         args.append(build_command)
-        if target:
-            args.append(target)
+        if targets:
+            args.extend(targets)
 
         if make_options is None:
             make_options = []

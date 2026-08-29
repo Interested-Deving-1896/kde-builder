@@ -295,8 +295,8 @@ class BuildSystemKDECMake(BuildSystem):
         """
         module = self.module
         generator = self.get_cmake_generator()
-        target = BuildSystemKDECMake.GENERATOR_MAP[generator]["install_target"]
-        args = self.build_system_args(target=target, prefix_options=cmd_prefix)
+        targets = [BuildSystemKDECMake.GENERATOR_MAP[generator]["install_target"]]
+        args = self.build_system_args(targets=targets, prefix_options=cmd_prefix)
 
         ret = self._run_build_system_command(
             message=f"Installing g[{module}]",
@@ -494,7 +494,7 @@ class BuildSystemKDECMake(BuildSystem):
     # @override
     def build_system_args(
             self,
-            target: None | str,
+            targets: None | list[str],
             make_options: list[str] | None = None,
             prefix_options: list[str] | None = None,
         ) -> list[str]:
@@ -509,8 +509,8 @@ class BuildSystemKDECMake(BuildSystem):
             make_options = []
 
         args = args + ["cmake", "--build", "."]
-        if target:
-            args.extend(["--target", target])
+        if targets:
+            args.extend(["--target", *targets])
         if make_options:
             args.extend(["--", *make_options])
 
