@@ -16,12 +16,12 @@ class IPCNull(IPC):
         self.msgList: list[bytes] = []
         """List of messages."""
 
-    # @override(check_signature=False)
+    # @override
     def send_message(self, msg: bytes) -> bool:
         self.msgList.append(msg)
         return True
 
-    # @override(check_signature=False)
+    # @override
     def receive_message(self) -> bytes:
         if not len(self.msgList) > 0:
             return b""

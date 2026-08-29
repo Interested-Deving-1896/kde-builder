@@ -37,23 +37,20 @@ class BuildSystemMeson(BuildSystem):
         exitcode = Util.run_logged(module, "meson-setup", sourcedir, ["meson", "setup", builddir, "--prefix", installdir, *setup_options])
         return Util.good_exitcode(exitcode)
 
-    @staticmethod
     # @override
-    def supports_auto_parallelism() -> bool:
+    def supports_auto_parallelism(self) -> bool:
         return True  # meson requires ninja so supports this by default
 
     # @override
     def build_options_name(self) -> str:
         return "ninja-options"
 
-    @staticmethod
     # @override
-    def build_commands() -> list[str]:
+    def build_commands(self) -> list[str]:
         return ["ninja"]
 
-    @staticmethod
     # @override
-    def required_programs() -> list[str]:
+    def required_programs(self) -> list[str]:
         return ["meson", "ninja"]
 
     @staticmethod

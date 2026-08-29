@@ -174,7 +174,7 @@ class BuildSystemKDECMake(BuildSystem):
     def has_toolchain(self) -> bool:
         return self.get_cmake_toolchain() != ""
 
-    # @override(check_signature=False)
+    # @override
     def supports_auto_parallelism(self) -> bool:
         """
         Return true if CMake is run with ninja, which supports setting -j automatically.
@@ -238,7 +238,7 @@ class BuildSystemKDECMake(BuildSystem):
             module.prepend_environment_value("CMAKE_PREFIX_PATH", qt_installdir)
             module.prepend_environment_value("CMAKE_MODULE_PATH", f"{qt_installdir}/lib/cmake")
 
-    # @override(check_signature=False)
+    # @override
     def required_programs(self) -> list[str]:
         """
         Return a list of executable names that must be present to even bother attempting to use this build system.
@@ -249,7 +249,7 @@ class BuildSystemKDECMake(BuildSystem):
         required = BuildSystemKDECMake.GENERATOR_MAP[generator]["required_programs"]
         return required
 
-    # @override(check_signature=False)
+    # @override
     def build_commands(self) -> list[str]:
         """
         Return a list of possible build commands to run, any one of which should be supported by the build system.

@@ -39,7 +39,7 @@ class IPCPipe(IPC):
     def supports_concurrency() -> bool:
         return True
 
-    # @override(check_signature=False)
+    # @override
     def send_message(self, msg: bytes) -> bool:
         """
         Send message.
@@ -62,7 +62,7 @@ class IPCPipe(IPC):
         result = fh.read(length)
         return result
 
-    # @override(check_signature=False)
+    # @override
     def receive_message(self) -> bytes:
         # Read unsigned short with msg length, then the message
         msg_length = self._read_number_of_bytes(2)

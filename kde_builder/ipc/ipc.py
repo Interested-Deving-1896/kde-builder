@@ -10,7 +10,6 @@ import struct
 from enum import IntEnum
 from typing import TYPE_CHECKING
 from typing import Callable
-from typing import NoReturn
 
 from kde_builder.debug import KBLogger
 from kde_builder.kb_exception import KBRuntimeError
@@ -393,7 +392,7 @@ class IPC:
     # These must be reimplemented.  They must be able to handle scalars without
     # any extra frills.
 
-    def send_message(self, msg: bytes) -> NoReturn:
+    def send_message(self, msg: bytes) -> bool:
         """
         Send message.
 
@@ -410,7 +409,7 @@ class IPC:
         """
         raise ProgramError("Unimplemented.")
 
-    def receive_message(self) -> NoReturn:
+    def receive_message(self) -> bytes:
         """
         Return a message received from the other side, or None for EOF or error.
 

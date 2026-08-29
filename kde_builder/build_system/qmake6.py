@@ -26,9 +26,8 @@ class BuildSystemQMake6(BuildSystem):
     def name() -> str:
         return "qmake6"
 
-    @staticmethod
     # @override
-    def required_programs() -> list[str]:
+    def required_programs(self) -> list[str]:
         return ["qmake"]
 
     @classmethod

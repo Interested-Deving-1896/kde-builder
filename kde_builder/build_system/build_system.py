@@ -122,8 +122,7 @@ class BuildSystem:
         """
         pass
 
-    @staticmethod
-    def required_programs() -> list[str]:
+    def required_programs(self) -> list[str]:
         """
         Return a list of executable names that must be present to even bother attempting to use this build system.
 
@@ -138,8 +137,7 @@ class BuildSystem:
     def build_options_name(self) -> str:
         return "make-options"
 
-    @staticmethod
-    def build_commands() -> list[str]:
+    def build_commands(self) -> list[str]:
         """
         Return a list of possible build commands to run, any one of which should be supported by the build system.
         """
@@ -156,8 +154,7 @@ class BuildSystem:
             logger_buildsystem.warning(" y[*] Not found any of these executables: '" + "' '".join(self.build_commands()) + "'. build_command will be undefined.")
         return build_command
 
-    @staticmethod
-    def supports_auto_parallelism() -> bool:
+    def supports_auto_parallelism(self) -> bool:
         """
         Indicate if the build_system will automatically perform a parallel build without needing the -j command line option (or equivalent).
 
