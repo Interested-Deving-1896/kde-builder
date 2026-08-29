@@ -60,11 +60,6 @@ class Updater:
         self.ipc = None
         return num_commits
 
-    @staticmethod
-    # @override(check_signature=False)
-    def name() -> str:
-        return "git"
-
     def _resolve_branch_group(self, branch_group: str) -> str | None:
         """
         Resolve the requested branch-group for this Updater's module.

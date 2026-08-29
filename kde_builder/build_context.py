@@ -667,7 +667,6 @@ class BuildContext(PathResolvingOptions):
             logger_buildcontext.error(f"Unable to save persistent data: b[r[{e}]")
             return
 
-    # @override(check_signature=False)
     def get_persistent_option(self, module_name: str, key=None) -> str | int | None:
         """
         Return the value of a "persistent" option (normally read in as part of startup), or None if there is no value stored.
@@ -691,7 +690,6 @@ class BuildContext(PathResolvingOptions):
             return None
         return persistent_opts[module_name][key]
 
-    # @override(check_signature=False)
     def unset_persistent_option(self, module_name: str, key) -> None:
         """
         Clear a persistent option if set (for a given module and option-name).
@@ -709,7 +707,6 @@ class BuildContext(PathResolvingOptions):
         if module_name in persistent_opts and key in persistent_opts[module_name]:
             del persistent_opts[module_name][key]
 
-    # @override(check_signature=False)
     def set_persistent_option(self, module_name: str, key, value) -> None:
         """
         Set a "persistent" option which will be read in for a module when kde-builder starts up and written back out at (normal) program exit.
