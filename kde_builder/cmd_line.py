@@ -11,8 +11,8 @@ from kde_builder.build_context import BuildContext
 from kde_builder.debug import KBLogger
 from kde_builder.os_support import OSSupport
 from kde_builder.phase_list import PhaseList
-from kde_builder.version import Version
 from kde_builder.util.textwrap_mod import dedent
+from kde_builder.version import Version
 
 logger_app = KBLogger.getLogger("application")
 

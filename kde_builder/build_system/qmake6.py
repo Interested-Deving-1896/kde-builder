@@ -6,9 +6,9 @@
 import glob
 
 from kde_builder.build_system.build_system import BuildSystem
-from kde_builder.kb_exception import ProgramError
 from kde_builder.debug import Debug
 from kde_builder.debug import KBLogger
+from kde_builder.kb_exception import ProgramError
 from kde_builder.util.util import Util
 
 logger_buildsystem = KBLogger.getLogger("build-system")

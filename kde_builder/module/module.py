@@ -15,10 +15,6 @@ import sys
 import traceback
 from typing import TYPE_CHECKING
 
-from kde_builder.kb_exception import KBException
-from kde_builder.kb_exception import KBRuntimeError
-from kde_builder.kb_exception import ProgramError
-from kde_builder.kb_exception import SetOptionError
 from kde_builder.build_system.autotools import BuildSystemAutotools
 from kde_builder.build_system.build_system import BuildSystem
 from kde_builder.build_system.kde_cmake import BuildSystemKDECMake
@@ -28,10 +24,14 @@ from kde_builder.build_system.qmake6 import BuildSystemQMake6
 from kde_builder.debug import Debug
 from kde_builder.debug import KBLogger
 from kde_builder.ipc.ipc import IPC
+from kde_builder.kb_exception import KBException
+from kde_builder.kb_exception import KBRuntimeError
+from kde_builder.kb_exception import ProgramError
+from kde_builder.kb_exception import SetOptionError
 from kde_builder.options_base import PathResolvingOptions
 from kde_builder.updater.updater import Updater
-from kde_builder.util.util import Util
 from kde_builder.util.textwrap_mod import dedent
+from kde_builder.util.util import Util
 
 if TYPE_CHECKING:
     from kde_builder.build_context import BuildContext

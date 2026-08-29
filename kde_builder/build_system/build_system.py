@@ -12,9 +12,9 @@ import sys
 import time
 from typing import TYPE_CHECKING
 
-from kde_builder.kb_exception import ProgramError
 from kde_builder.debug import Debug
 from kde_builder.debug import KBLogger
+from kde_builder.kb_exception import ProgramError
 from kde_builder.util.logged_subprocess import UtilLoggedSubprocess
 from kde_builder.util.util import Util
 

@@ -5,16 +5,16 @@
 
 from __future__ import annotations
 
-from enum import IntEnum
 import re
 import struct
+from enum import IntEnum
+from typing import TYPE_CHECKING
 from typing import Callable
 from typing import NoReturn
-from typing import TYPE_CHECKING
 
+from kde_builder.debug import KBLogger
 from kde_builder.kb_exception import KBRuntimeError
 from kde_builder.kb_exception import ProgramError
-from kde_builder.debug import KBLogger
 
 if TYPE_CHECKING:
     from kde_builder.module.module import Module

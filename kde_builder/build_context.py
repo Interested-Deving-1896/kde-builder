@@ -9,15 +9,15 @@ import datetime
 import errno
 import json
 import os
-from pathlib import Path
 import re
 import sys
 import tempfile
+from pathlib import Path
 
-from kde_builder.kb_exception import KBRuntimeError
-from kde_builder.kb_exception import ProgramError
 from kde_builder.debug import Debug
 from kde_builder.debug import KBLogger
+from kde_builder.kb_exception import KBRuntimeError
+from kde_builder.kb_exception import ProgramError
 from kde_builder.kb_exception import SetOptionError
 from kde_builder.metadata.kde_projects_reader import KDEProjectsReader
 from kde_builder.metadata.metadata import Metadata
@@ -26,8 +26,8 @@ from kde_builder.module.module import Module
 from kde_builder.options_base import PathResolvingOptions
 from kde_builder.phase_list import PhaseList
 from kde_builder.status_view import StatusView
-from kde_builder.util.util import Util
 from kde_builder.util.textwrap_mod import dedent
+from kde_builder.util.util import Util
 
 logger_buildcontext = KBLogger.getLogger("build-context")
 

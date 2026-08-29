@@ -5,6 +5,7 @@ select = [
     "D",
     "E",
     "F401",
+    "I",
     "N",
     "W",
     "TID252",
@@ -36,3 +37,6 @@ extend-select = [
 
 [lint.flake8-tidy-imports]
 ban-relative-imports = "all"
+
+[lint.isort]
+force-single-line = true
