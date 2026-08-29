@@ -236,6 +236,11 @@ class TaskManager:
         if not module.build():
             return "build"  # phase failed at
 
+        has_custom_targets = module.get_option("targets")
+        if has_custom_targets:
+            module.set_persistent_option("failure-count", 0)
+            return ""  # Do not continue with normal installation.
+
         if not module.phases.has("install"):
             logger_taskmanager.info("\tSkipping install due to disabled install phase.")
             module.set_persistent_option("failure-count", 0)

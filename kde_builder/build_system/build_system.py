@@ -199,9 +199,16 @@ class BuildSystem:
 
     def build_internal(self) -> bool:
         build_options = self.get_build_options()
-        args = self.build_system_args(targets=None, make_options=build_options)
+        custom_targets = self.module.get_option("targets")
+        if custom_targets:
+            msg = "Building custom targets..."
+            targets = custom_targets
+        else:
+            msg = "Compiling..."
+            targets = None
+        args = self.build_system_args(targets=targets, make_options=build_options)
         ret = self._run_build_system_command(
-            message="Compiling...",
+            message=msg,
             logname="build",
             args=args,
         )

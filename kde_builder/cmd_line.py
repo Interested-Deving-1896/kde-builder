@@ -128,6 +128,9 @@ class Cmdline:
 
         parser.add_argument("--set-project-option-value", type=validate_set_project_option_value, action="append")
 
+        supported_options.remove("target=s@")  # specify differently, allowing it to be repeated in cmdline
+        parser.add_argument("--target", action="append")
+
         # Handle `parser.add_argument(...)`.
         # This is done by parsing supported_options and extracting option variants (long, alias, short ...), parameter numbers and default values.
         for key in supported_options:
@@ -238,6 +241,9 @@ class Cmdline:
                     if module not in opts["per_project"]:
                         opts["per_project"][module] = {}
                     opts["per_project"][module][option] = value
+
+        if args.target:
+            found_options["targets"] = args.target
 
         if args.ignore_projects:
             opts["ignore-projects"] = args.ignore_projects
@@ -501,6 +507,7 @@ class Cmdline:
             "niceness|nice:10",
             "pretend|dry-run|p",
             "refresh-build|r",
+            "target=s@",
         ]
 
         options_converted_to_canonical = [

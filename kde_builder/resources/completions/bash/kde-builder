@@ -260,7 +260,7 @@ _kde_builder() {
     --after --resume-after -a --from --resume-from -f --resume-refresh-build-first -R
     --revision --run-tests --no-run-tests --self-update --set-project-option-value --show-info
     --show-options-specifiers --source-dir --source-when-start-program --src-only
-    --stop-after --to --stop-before --until --stop-on-failure --no-stop-on-failure --tag
+    --stop-after --to --stop-before --until --stop-on-failure --no-stop-on-failure --tag --target
     --taskset-cpu-list --uninstall --use-clean-install --no-use-clean-install
     --use-idle-io-priority --no-use-idle-io-priority
     --version -v --run
@@ -318,7 +318,7 @@ _kde_builder() {
         --ninja-options|--num-cores-low-mem|--num-cores|--override-build-system|\
         --persistent-data-file|--qmake-options|--qt-install-dir|--query|\
         --remove-after-install|--revision|--set-project-option-value|--source-dir|\
-        --source-when-start-program|--stop-after|--to|--tag|--taskset-cpu-list)
+        --source-when-start-program|--stop-after|--to|--tag|--target|--taskset-cpu-list)
             # These options require arguments, but we don't complete them
             return 0
             ;;

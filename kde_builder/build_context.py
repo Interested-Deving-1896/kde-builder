@@ -95,6 +95,7 @@ class BuildContext(PathResolvingOptions):
             "niceness": 10,
             "pretend": "",
             "refresh-build": "",
+            "targets": {},
         }
 
         # These options are exposed as cmdline options without parameters, and having the negatable form with "--no-".

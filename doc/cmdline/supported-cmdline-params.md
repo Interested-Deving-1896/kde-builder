@@ -584,6 +584,18 @@ The corresponding configuration file option is
 Enables the `refresh-build` option for the first project appeared in final projects list to build.
 Useful in conjunction with `--resume`. See also [`--resume-refresh-build-first`](#cmdline-resume-refresh-build-first).
 
+(cmdline-target)=
+[`--target`](cmdline-target) \<name\>  
+Specify the build target(s) for the project.
+You can use several targets at once by duplicating the option in command line. For example:
+```bash
+kde-builder kcalc --target all --target install/strip
+```
+This will build KCalc, and install it with striped binaries.
+
+The corresponding configuration file option is
+[targets](#conf-targets).
+
 (cmdline-reconfigure)=
 [`--reconfigure`](cmdline-reconfigure)  
 Run `cmake` (for KDE projects) or `configure` (for non-cmake projects) again, without
