@@ -6,12 +6,10 @@ build-backend = "hatchling.build"
 name = "kde-builder"
 dynamic = ["version"]
 description = "A tool to streamline the process of setting up and maintaining development environment for KDE software"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 
 dependencies = [
     "dbus-python",
-    "exceptiongroup; python_version < '3.11'",
-    "overrides; python_version < '3.11'",
     "pyyaml",
     "setproctitle",
 ]

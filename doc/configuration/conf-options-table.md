@@ -900,6 +900,24 @@ to use this option. KDE releases are available in tarball form from the
 
 Related command-line option: [--tag](#cmdline-tag).
 
+(conf-targets)=
+[`targets`](conf-targets)
+
+Type: List of Strings
+
+Specify the build targets for the project. This should be a list of strings in the config.
+Example:
+```yaml
+global:
+  targets:
+    - all
+    - install/strip
+```
+
+This will apply to all projects (unless you override targets option for project).
+
+Related command-line option: [--target](#cmdline-target).
+
 (conf-taskset-cpu-list)=
 [`taskset-cpu-list`](conf-taskset-cpu-list)
 

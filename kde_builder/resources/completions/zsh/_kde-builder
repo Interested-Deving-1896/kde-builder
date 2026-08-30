@@ -91,6 +91,7 @@ _arguments \
   "(--stop-after --stop-before --to --until)"{--stop-before,--until}"[Stops just before the given project is reached]"":::_kde-builder_projects_and_groups" \
   "(--stop-on-failure --no-stop-on-failure)"{--stop-on-failure,--no-stop-on-failure}"[Stops/Does not stop the build as soon as a project fails to build]" \
   --tag"[Download a specific release of a project]"":argument:" \
+  --target"[Specifies custom build targets]"":argument:" \
   --taskset-cpu-list"[Limit the build/install process to certain CPU cores]"":argument:" \
   --uninstall"[Uninstalls the project]" \
   "(--use-clean-install --no-use-clean-install)"{--use-clean-install,--no-use-clean-install}"[Run make uninstall directly before running make install]" \

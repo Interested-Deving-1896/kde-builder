@@ -5,16 +5,15 @@
 
 from __future__ import annotations
 
-from enum import IntEnum
 import re
 import struct
-from typing import Callable
-from typing import NoReturn
+from enum import IntEnum
 from typing import TYPE_CHECKING
+from typing import Callable
 
+from kde_builder.debug import KBLogger
 from kde_builder.kb_exception import KBRuntimeError
 from kde_builder.kb_exception import ProgramError
-from kde_builder.debug import KBLogger
 
 if TYPE_CHECKING:
     from kde_builder.module.module import Module
@@ -393,7 +392,7 @@ class IPC:
     # These must be reimplemented.  They must be able to handle scalars without
     # any extra frills.
 
-    def send_message(self, msg: bytes) -> NoReturn:
+    def send_message(self, msg: bytes) -> bool:
         """
         Send message.
 
@@ -410,7 +409,7 @@ class IPC:
         """
         raise ProgramError("Unimplemented.")
 
-    def receive_message(self) -> NoReturn:
+    def receive_message(self) -> bytes:
         """
         Return a message received from the other side, or None for EOF or error.
 

@@ -4,8 +4,8 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 import os
-from pathlib import Path
 import tempfile
+from pathlib import Path
 
 from kde_builder.build_context import BuildContext
 from kde_builder.util.util import Util

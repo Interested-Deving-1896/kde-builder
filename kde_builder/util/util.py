@@ -11,21 +11,21 @@ import codecs
 import hashlib
 import logging
 import os.path
-from pathlib import Path
 import re
 import shlex
 import shutil
 import signal
 import subprocess
 import sys
-from typing import Callable
+from pathlib import Path
 from typing import TYPE_CHECKING
+from typing import Callable
 
 import setproctitle
 
-from kde_builder.kb_exception import KBRuntimeError
 from kde_builder.debug import Debug
 from kde_builder.debug import KBLogger
+from kde_builder.kb_exception import KBRuntimeError
 from kde_builder.kb_exception import ProgramError
 from kde_builder.util.textwrap_mod import dedent
 

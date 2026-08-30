@@ -1,5 +1,8 @@
 # Changelog
 
+2026-08-29
+: Added `--target` option.
+
 2026-08-25
 : Removed option `custom-build-command`.
 

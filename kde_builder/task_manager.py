@@ -14,17 +14,17 @@ from typing import TYPE_CHECKING
 
 import setproctitle
 
-from kde_builder.kb_exception import KBRuntimeError
 from kde_builder.debug import Debug
 from kde_builder.debug import KBLogger
 from kde_builder.ipc.ipc import IPC
 from kde_builder.ipc.null import IPCNull
 from kde_builder.ipc.pipe import IPCPipe
+from kde_builder.kb_exception import KBRuntimeError
 from kde_builder.util.util import Util
 
 if TYPE_CHECKING:
-    from kde_builder.build_context import BuildContext
     from kde_builder.application import Application
+    from kde_builder.build_context import BuildContext
     from kde_builder.module.module import Module
 
 logger_ipc = KBLogger.getLogger("ipc")
@@ -235,6 +235,11 @@ class TaskManager:
 
         if not module.build():
             return "build"  # phase failed at
+
+        has_custom_targets = module.get_option("targets")
+        if has_custom_targets:
+            module.set_persistent_option("failure-count", 0)
+            return ""  # Do not continue with normal installation.
 
         if not module.phases.has("install"):
             logger_taskmanager.info("\tSkipping install due to disabled install phase.")

@@ -9,15 +9,16 @@ import datetime
 import errno
 import json
 import os
-from pathlib import Path
 import re
 import sys
 import tempfile
+from pathlib import Path
+from typing import override
 
-from kde_builder.kb_exception import KBRuntimeError
-from kde_builder.kb_exception import ProgramError
 from kde_builder.debug import Debug
 from kde_builder.debug import KBLogger
+from kde_builder.kb_exception import KBRuntimeError
+from kde_builder.kb_exception import ProgramError
 from kde_builder.kb_exception import SetOptionError
 from kde_builder.metadata.kde_projects_reader import KDEProjectsReader
 from kde_builder.metadata.metadata import Metadata
@@ -26,8 +27,8 @@ from kde_builder.module.module import Module
 from kde_builder.options_base import PathResolvingOptions
 from kde_builder.phase_list import PhaseList
 from kde_builder.status_view import StatusView
-from kde_builder.util.util import Util
 from kde_builder.util.textwrap_mod import dedent
+from kde_builder.util.util import Util
 
 logger_buildcontext = KBLogger.getLogger("build-context")
 
@@ -95,6 +96,7 @@ class BuildContext(PathResolvingOptions):
             "niceness": 10,
             "pretend": "",
             "refresh-build": "",
+            "targets": {},
         }
 
         # These options are exposed as cmdline options without parameters, and having the negatable form with "--no-".
@@ -330,7 +332,7 @@ class BuildContext(PathResolvingOptions):
         except Exception as e:
             logger_buildcontext.warning(f" y[*] Failed to close lock: {e}")
 
-    # @override
+    @override
     def get_log_dir(self) -> str:
         return self.get_log_dir_for(self)
 
@@ -370,7 +372,7 @@ class BuildContext(PathResolvingOptions):
 
         return log_dir
 
-    # @override
+    @override
     def get_log_path(self, path: str) -> str:
         return self.get_log_path_for(self, path)
 
@@ -563,7 +565,7 @@ class BuildContext(PathResolvingOptions):
         modules = [module for module in modules if module.name in self.errors]
         return modules
 
-    # @override
+    @override
     def set_option(self, opt_name: str, opt_val) -> None:
 
         # Special case handling.
@@ -666,7 +668,6 @@ class BuildContext(PathResolvingOptions):
             logger_buildcontext.error(f"Unable to save persistent data: b[r[{e}]")
             return
 
-    # @override(check_signature=False)
     def get_persistent_option(self, module_name: str, key=None) -> str | int | None:
         """
         Return the value of a "persistent" option (normally read in as part of startup), or None if there is no value stored.
@@ -690,7 +691,6 @@ class BuildContext(PathResolvingOptions):
             return None
         return persistent_opts[module_name][key]
 
-    # @override(check_signature=False)
     def unset_persistent_option(self, module_name: str, key) -> None:
         """
         Clear a persistent option if set (for a given module and option-name).
@@ -708,7 +708,6 @@ class BuildContext(PathResolvingOptions):
         if module_name in persistent_opts and key in persistent_opts[module_name]:
             del persistent_opts[module_name][key]
 
-    # @override(check_signature=False)
     def set_persistent_option(self, module_name: str, key, value) -> None:
         """
         Set a "persistent" option which will be read in for a module when kde-builder starts up and written back out at (normal) program exit.
@@ -760,7 +759,7 @@ class BuildContext(PathResolvingOptions):
         self.metadata = Metadata(repo_metadata_fullpath)
         self.branch_group_resolver = ModuleBranchGroupResolver(self.metadata.branch_groups)
 
-    # @override
+    @override
     def verify_option_value_type(self, option_name, option_value) -> None:
         if option_name in self.all_boolean_options and not isinstance(option_value, bool):
             raise SetOptionError(option_name, f"Option \"{option_name}\" has invalid boolean value \"{option_value}\".")

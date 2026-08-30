@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: GPL-2.0-or-later
 
+from typing import override
+
 from kde_builder.build_system.qmake6 import BuildSystemQMake6
 
 
@@ -13,6 +15,6 @@ class BuildSystemQMake5(BuildSystemQMake6):
     possible_qmake_names = ["qmake-qt5", "qmake5", "qmake-mac", "qmake"]
 
     @staticmethod
-    # @override
+    @override
     def name() -> str:
         return "qmake"

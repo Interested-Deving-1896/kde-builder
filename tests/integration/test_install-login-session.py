@@ -4,6 +4,7 @@
 
 from kde_builder.application import Application
 
+
 def test_install_login_session(monkeypatch):
     """
     Test use of --install-login-session-only.

@@ -7,10 +7,11 @@ from __future__ import annotations
 import os
 import re
 from typing import TYPE_CHECKING
+
 import yaml
 
-from kde_builder.kb_exception import ConfigError
 from kde_builder.debug import KBLogger
+from kde_builder.kb_exception import ConfigError
 
 if TYPE_CHECKING:
     from kde_builder.build_context import BuildContext

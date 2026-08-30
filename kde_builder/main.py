@@ -12,10 +12,11 @@ import sys
 import traceback
 
 from kde_builder import KB_PACKAGE_DIR
+from kde_builder.debug import KBLogger
 from kde_builder.kb_exception import ProgramError
 from kde_builder.kb_exception import UnknownKdeProjectException
-from kde_builder.debug import KBLogger
 from kde_builder.util.textwrap_mod import dedent
+
 
 def ensure_runtime_pymodules_installed():
     """
@@ -159,8 +160,8 @@ def main():
             setup_steps.append("generate-config")
 
     if setup_steps:
-        from kde_builder.first_run import FirstRun
         from kde_builder.debug import Debug
+        from kde_builder.first_run import FirstRun
 
         d = Debug()
         d.set_colorful_output(True)

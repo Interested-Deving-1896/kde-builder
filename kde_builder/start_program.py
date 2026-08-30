@@ -5,8 +5,8 @@
 from __future__ import annotations
 
 import os
-from typing import NoReturn
 from typing import TYPE_CHECKING
+from typing import NoReturn
 
 from kde_builder.debug import Debug
 from kde_builder.debug import KBLogger

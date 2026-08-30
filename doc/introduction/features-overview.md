@@ -63,3 +63,6 @@ KDE Builder features include:
 - Command logging. Logs are dated and numbered so that you always have a
   log of a script run. Also, a special symlink called latest is created
   to always point to the most recent log entry in the log directory.
+
+- You can build just the needed targets of the project instead of building
+  the whole project by using `--target` option.

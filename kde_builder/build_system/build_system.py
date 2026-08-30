@@ -12,9 +12,9 @@ import sys
 import time
 from typing import TYPE_CHECKING
 
-from kde_builder.kb_exception import ProgramError
 from kde_builder.debug import Debug
 from kde_builder.debug import KBLogger
+from kde_builder.kb_exception import ProgramError
 from kde_builder.util.logged_subprocess import UtilLoggedSubprocess
 from kde_builder.util.util import Util
 
@@ -122,8 +122,7 @@ class BuildSystem:
         """
         pass
 
-    @staticmethod
-    def required_programs() -> list[str]:
+    def required_programs(self) -> list[str]:
         """
         Return a list of executable names that must be present to even bother attempting to use this build system.
 
@@ -138,8 +137,7 @@ class BuildSystem:
     def build_options_name(self) -> str:
         return "make-options"
 
-    @staticmethod
-    def build_commands() -> list[str]:
+    def build_commands(self) -> list[str]:
         """
         Return a list of possible build commands to run, any one of which should be supported by the build system.
         """
@@ -156,8 +154,7 @@ class BuildSystem:
             logger_buildsystem.warning(" y[*] Not found any of these executables: '" + "' '".join(self.build_commands()) + "'. build_command will be undefined.")
         return build_command
 
-    @staticmethod
-    def supports_auto_parallelism() -> bool:
+    def supports_auto_parallelism(self) -> bool:
         """
         Indicate if the build_system will automatically perform a parallel build without needing the -j command line option (or equivalent).
 
@@ -199,9 +196,16 @@ class BuildSystem:
 
     def build_internal(self) -> bool:
         build_options = self.get_build_options()
-        args = self.build_system_args(target=None, make_options=build_options)
+        custom_targets = self.module.get_option("targets")
+        if custom_targets:
+            msg = "Building custom targets..."
+            targets = custom_targets
+        else:
+            msg = "Compiling..."
+            targets = None
+        args = self.build_system_args(targets=targets, make_options=build_options)
         ret = self._run_build_system_command(
-            message="Compiling...",
+            message=msg,
             logname="build",
             args=args,
         )
@@ -243,7 +247,7 @@ class BuildSystem:
         """
         module = self.module
 
-        args = self.build_system_args(target="install", prefix_options=cmd_prefix)
+        args = self.build_system_args(targets=["install"], prefix_options=cmd_prefix)
         ret = self._run_build_system_command(
             message=f"Installing g[{module}]",
             logname="install",
@@ -262,7 +266,7 @@ class BuildSystem:
         """
         module = self.module
         module.unset_persistent_option("last-install-rev")
-        args = self.build_system_args(target="uninstall", prefix_options=cmd_prefix)
+        args = self.build_system_args(targets=["uninstall"], prefix_options=cmd_prefix)
         ret = self._run_build_system_command(
             message=f"Uninstalling g[{module}]",
             logname="uninstall",
@@ -368,7 +372,7 @@ class BuildSystem:
 
     def build_system_args(
             self,
-            target: None | str,
+            targets: None | list[str],
             make_options: list[str] | None = None,
             prefix_options: list[str] | None = None,
         ) -> list[str]:
@@ -384,7 +388,7 @@ class BuildSystem:
 
         Args:
             make_options: List of command line arguments to pass to make/ninja.
-            target: None, or a valid build target e.g. "install".
+            targets: None, or a valid build targets list e.g. ["install"].
             prefix_options: List of command line arguments to prefix *before* the
                 make/ninja command, used for make-install-prefix support for e.g. sudo.
         """
@@ -396,8 +400,8 @@ class BuildSystem:
             return []
 
         args.append(build_command)
-        if target:
-            args.append(target)
+        if targets:
+            args.extend(targets)
 
         if make_options is None:
             make_options = []

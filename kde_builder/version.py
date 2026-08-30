@@ -3,9 +3,10 @@
 #
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-from importlib.metadata import version, PackageNotFoundError
 import os
 import subprocess
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version
 from typing import NoReturn
 
 from kde_builder import KB_REPO_DIR

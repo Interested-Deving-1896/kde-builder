@@ -20,12 +20,11 @@ from time import sleep
 from time import time
 from typing import Callable
 from typing import NoReturn
+
 import yaml
 
 from kde_builder import KB_PACKAGE_DIR
 from kde_builder import KB_REPO_DIR
-from kde_builder.kb_exception import ConfigError
-from kde_builder.kb_exception import KBRuntimeError
 from kde_builder.build_context import BuildContext
 from kde_builder.build_system.qmake5 import BuildSystemQMake5
 from kde_builder.cmd_line import Cmdline
@@ -33,6 +32,8 @@ from kde_builder.debug import Debug
 from kde_builder.debug import KBLogger
 from kde_builder.debug_order_hints import DebugOrderHints
 from kde_builder.dependency_resolver import DependencyResolver
+from kde_builder.kb_exception import ConfigError
+from kde_builder.kb_exception import KBRuntimeError
 from kde_builder.log_dir import LogDir
 from kde_builder.module.module import Module
 from kde_builder.module_resolver import ModuleResolver
@@ -42,8 +43,8 @@ from kde_builder.recursive_config_nodes_iterator import RecursiveConfigNodesIter
 from kde_builder.start_program import StartProgram
 from kde_builder.task_manager import TaskManager
 from kde_builder.updater.updater import Updater
-from kde_builder.util.util import Util
 from kde_builder.util.textwrap_mod import dedent
+from kde_builder.util.util import Util
 from kde_builder.version import Version
 
 logger_app = KBLogger.getLogger("application")

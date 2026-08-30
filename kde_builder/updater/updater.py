@@ -14,14 +14,14 @@ import time
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from kde_builder.kb_exception import KBRuntimeError
-from kde_builder.kb_exception import ConfigError
-from kde_builder.kb_exception import ProgramError
 from kde_builder.debug import Debug
 from kde_builder.debug import KBLogger
 from kde_builder.ipc.null import IPCNull
-from kde_builder.util.util import Util
+from kde_builder.kb_exception import ConfigError
+from kde_builder.kb_exception import KBRuntimeError
+from kde_builder.kb_exception import ProgramError
 from kde_builder.util.textwrap_mod import dedent
+from kde_builder.util.util import Util
 
 if TYPE_CHECKING:
     from kde_builder.build_context import BuildContext
@@ -59,11 +59,6 @@ class Updater:
         num_commits = self.update_checkout()
         self.ipc = None
         return num_commits
-
-    @staticmethod
-    # @override(check_signature=False)
-    def name() -> str:
-        return "git"
 
     def _resolve_branch_group(self, branch_group: str) -> str | None:
         """

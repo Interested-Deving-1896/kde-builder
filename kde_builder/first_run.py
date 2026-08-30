@@ -13,9 +13,9 @@ from typing import NoReturn
 
 from kde_builder import KB_PACKAGE_DIR
 from kde_builder.build_context import BuildContext
+from kde_builder.debug import KBLogger
 from kde_builder.kb_exception import KBException
 from kde_builder.kb_exception import SetupError
-from kde_builder.debug import KBLogger
 from kde_builder.os_support import OSSupport
 
 logger_fr = KBLogger.getLogger("first-run")
