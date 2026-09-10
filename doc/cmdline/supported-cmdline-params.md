@@ -348,10 +348,10 @@ missing dependency causes the build failure. Once you correct the error
 you can quickly get back into building the projects you were building
 before, without fiddling with `--resume-from` and `--stop-before`.
 
-(cmdline-resume-refresh-build-first)=
-[`--resume-refresh-build-first`](cmdline-resume-refresh-build-first) (or `-R`)  
-This option is an alias for using `--resume` and `--refresh-build-first` at the same time.
-It is convenient to use when some project failed to build, and you want to refresh build it,
+(cmdline-R)=
+[`-R`](cmdline-R)  
+This option is an alias for using `--resume` and `--clean-build-first` at the same time.
+It is convenient to use when some project failed to build, and you want to clean build it,
 and then continue (re-)building projects after that one, as if it was built successfully in
 the first place.
 
@@ -550,7 +550,7 @@ consists of normal setup up to and including running `cmake` or
 `configure` (as appropriate), but `make` is not run and no installation
 is attempted. This is mostly only useful to get things like
 `configure --help` and `cmake-gui` to work. Normally you want
-`--reconfigure` or `--refresh-build`.  
+`--reconfigure` or `--clean-build`.  
 This option causes kde-builder to abort building a project just before
 the `make` command would have been run. This is supported for
 compatibility with older versions only, this effect is not helpful for
@@ -566,8 +566,8 @@ See [](#installing-login-session) for more information.
 
 ## Build behavior
 
-(cmdline-refresh-build)=
-[`--refresh-build`](cmdline-refresh-build) (or `-r`)  
+(cmdline-clean-build)=
+[`--clean-build`](cmdline-clean-build) (or `-c`)  
 Removes the build directory for a project before the build phase starts.
 This has the desired side effect of forcing `kde-builder` to
 re-configure the project and build it from a "pristine" state with no
@@ -577,12 +577,12 @@ have problems getting a project to build but realize it will take longer
 doubt use this option for the entire `kde-builder` run.
 
 The corresponding configuration file option is
-[refresh-build](#conf-refresh-build).
+[clean-build](#conf-clean-build).
 
-(cmdline-refresh-build-first)=
-[`--refresh-build-first`](cmdline-refresh-build-first)  
-Enables the `refresh-build` option for the first project appeared in final projects list to build.
-Useful in conjunction with `--resume`. See also [`--resume-refresh-build-first`](#cmdline-resume-refresh-build-first).
+(cmdline-clean-build-first)=
+[`--clean-build-first`](cmdline-clean-build-first)  
+Enables the `clean-build` option for the first project appeared in final projects list to build.
+Useful in conjunction with `--resume`. See also [`-R`](#cmdline-R).
 
 (cmdline-target)=
 [`--target`](cmdline-target) \<name\>  
@@ -600,13 +600,13 @@ The corresponding configuration file option is
 [`--reconfigure`](cmdline-reconfigure)  
 Run `cmake` (for KDE projects) or `configure` (for non-cmake projects) again, without
 cleaning the build directory.
-Usually you actually want `--refresh-build`, but if you are 100% sure
+Usually you actually want `--clean-build`, but if you are 100% sure
 your change to `cmake-options` will not invalidate your current
 intermediate output then this can save some time.
 You should not normally have to specify
 this, as kde-builder will detect when you change the relevant options
 and automatically re-run the build setup. This option is implied if
-`--refresh-build` is used.
+`--clean-build` is used.
 
 The corresponding configuration file option is
 [reconfigure](#conf-reconfigure).
@@ -615,7 +615,7 @@ The corresponding configuration file option is
 [`--install-dir`](cmdline-install-dir) \<path\>  
 This allows you to change the directory where projects will be installed
 to. This option implies [`--reconfigure`](#cmdline-reconfigure), but
-using [`--refresh-build`](#cmdline-refresh-build) may still be required.
+using [`--clean-build`](#cmdline-clean-build) may still be required.
 
 The corresponding configuration file option is
 [install-dir](#conf-install-dir).
@@ -770,9 +770,3 @@ Only display simple help on this script.
 Displays information about kde-builder and the operating system, that
 may prove useful in bug reports or when asking for help in forums or
 mailing lists.
-
-(cmdline-show-options-specifiers)=
-[`--show-options-specifiers`](cmdline-show-options-specifiers)  
-Print the specifier lines (in the format that GetOpts::Long accepts) for
-all command line options supported by the script. This may be used by
-developers, for example, for generating zsh autocompletion functions.

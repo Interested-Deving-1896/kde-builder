@@ -7,8 +7,9 @@ import argparse
 import re
 from typing import NoReturn
 
-from kde_builder.build_context import BuildContext
 from kde_builder.debug import KBLogger
+from kde_builder.options_spec import OptionsSpec
+from kde_builder.options_spec import add_bootstrap_arguments
 from kde_builder.os_support import OSSupport
 from kde_builder.phase_list import PhaseList
 from kde_builder.util.textwrap_mod import dedent
@@ -64,7 +65,7 @@ class Cmdline:
                 "selectors": [
                     "juk",
                     "frameworks-set",
-                    # etc.  MAY BE EMPTY in which case the command should build everything known
+                    # etc.  MAY BE EMPTY
                 ],
                 "ignore-projects": [
                     "plasma-nm",
@@ -95,28 +96,28 @@ class Cmdline:
         }
         found_options = {}
 
-        parser = argparse.ArgumentParser(add_help=False, allow_abbrev=False)
+        epilog_text = dedent("""
+            Documentation: https://kde-builder.kde.org
+                Supported command-line parameters:              https://kde-builder.kde.org/en/cmdline/supported-cmdline-params.html
+                Table of available configuration options:       https://kde-builder.kde.org/en/configuration/conf-options-table.html
 
-        supported_options = Cmdline._supported_options()
+            """)
+
+        parser = argparse.ArgumentParser(
+            prog="kde-builder",
+            description="A tool to streamline the process of setting up and maintaining a development environment for KDE software",
+            allow_abbrev=False,
+            epilog=epilog_text,
+            add_help=True,
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+        )
+
+        add_bootstrap_arguments(parser)  # To be able to see initial options in main parser too (for help text).
 
         # If we have --run option, grab all the rest arguments to pass to the corresponding parser.
         # This way the arguments after --run could start with "-" or "--".
-        run_index = -1
-        for i in list(range(0, len(options))):
-            if options[i] == "--run" or options[i] == "--start-program":
-                run_index = i
-                break
-
-        if run_index != -1:
-            found_options["no-metadata"] = True  # Implied --no-metadata
-            opts["start-program"] = options[run_index + 1:len(options)]
-            options = options[0:run_index]  # remove all after --run, and the --run itself # pl2py: in python the stop index is not included, so we add +1
-
-            if not opts["start-program"]:  # check this here, because later the empty list will be treated as not wanting to start program
-                logger_app.error("You need to specify a project binary with the --run option")
-                exit(1)  # Do not continue
-
-        supported_options.remove("set-project-option-value=s")  # specify differently, allowing it to be repeated in cmdline
+        opt = OptionsSpec.get_option_by_name("run")
+        parser.add_argument(*opt.dashed(), dest="start_program", nargs=argparse.REMAINDER, help=opt.help)
 
         def validate_set_project_option_value(inp_str: str):
             try:
@@ -126,64 +127,63 @@ class Cmdline:
                 logger_app.error(f" r[*] Invalid value in --set-project-option-value option. See https://kde-builder.kde.org/en/cmdline/supported-cmdline-params.html#cmdline-set-project-option-value.")
                 exit(1)  # Do not continue
 
-        parser.add_argument("--set-project-option-value", type=validate_set_project_option_value, action="append")
+        opt = OptionsSpec.get_option_by_name("set-project-option-value")
+        parser.add_argument(*opt.dashed(), type=validate_set_project_option_value, action="append", help=opt.help)
 
-        supported_options.remove("target=s@")  # specify differently, allowing it to be repeated in cmdline
-        parser.add_argument("--target", action="append")
+        opt = OptionsSpec.get_option_by_name("targets")
+        parser.add_argument("--target", action="append", help=opt.help)
 
-        # Handle `parser.add_argument(...)`.
-        # This is done by parsing supported_options and extracting option variants (long, alias, short ...), parameter numbers and default values.
-        for key in supported_options:
-            # global flags and global options are not duplicating options defined in options in _supported_options(). That function ensures that.
+        opt = OptionsSpec.get_option_by_name("ignore-projects")
+        parser.add_argument(*opt.dashed(), nargs="+", help=opt.help)
 
-            line = key
-            kwargs = {}
+        opt = OptionsSpec.get_option_by_name("d")
+        parser.add_argument(*opt.dashed(), action="store_true", help=opt.help)
 
-            if line.endswith("=s"):
-                kwargs["nargs"] = 1
-                line = line.removesuffix("=s")
-            elif line.endswith("!"):  # negatable boolean
-                kwargs["action"] = argparse.BooleanOptionalAction
-                line = line.removesuffix("!")
-            elif line.endswith("=s{,}"):  # one or more option values
-                kwargs["nargs"] = "+"
-                line = line.removesuffix("=s{,}")
-            elif line.endswith(":s"):  # optional string argument
-                kwargs["nargs"] = "?"
-                line = line.removesuffix(":s")
-            elif line.endswith("=i"):
-                kwargs["nargs"] = 1
-                line = line.removesuffix("=i")
-            elif line.endswith(":10"):  # for --nice
-                kwargs["nargs"] = "?"
-                kwargs["type"] = int
-                kwargs["default"] = 10
-                line = line.removesuffix(":10")
-            else:  # for example, for "-p" to not eat selector.
-                kwargs["action"] = "store_true"
+        opt = OptionsSpec.get_option_by_name("D")
+        parser.add_argument(*opt.dashed(), action="store_true", help=opt.help)
 
-            parts = line.split("|")
-            dashed_parts = []
-            for part in parts:
-                if len(part) == 1:
-                    dashed_parts.append("-" + part)
-                else:
-                    dashed_parts.append("--" + part)
+        opt = OptionsSpec.get_option_by_name("refresh-build")
+        parser.add_argument(*opt.dashed(), action="store_true", help=opt.help)
 
-            parser.add_argument(*dashed_parts, **kwargs)
+        for opt in OptionsSpec.global_options_without_parameter:
+            parser.add_argument(*opt.dashed(), action="store_true", help=opt.help)
+
+        for opt in OptionsSpec.global_options_with_parameter:
+            parser.add_argument(*opt.dashed(), nargs=1, help=opt.help)
+
+        for opt in OptionsSpec.global_options_with_negatable_form:
+            parser.add_argument(*opt.dashed(), action=argparse.BooleanOptionalAction, help=opt.help)
+
+        for opt in OptionsSpec.phase_changing_options:
+            parser.add_argument(*opt.dashed(), action="store_true", help=opt.help)
+
+        for opt in OptionsSpec.non_context_options_without_parameter:
+            parser.add_argument(*opt.dashed(), action="store_true", help=opt.help)
+
+        for opt in OptionsSpec.non_context_options_without_parameter_manually_handled:
+            parser.add_argument(*opt.dashed(), action="store_true", help=opt.help)
+
+        for opt in OptionsSpec.non_context_options_with_parameter:
+            parser.add_argument(*opt.dashed(), nargs=1, help=opt.help)
+
+        for opt in OptionsSpec.non_context_options_with_parameter_manually_handled:
+            parser.add_argument(*opt.dashed(), nargs=1, help=opt.help)
+
+        parser.add_argument("selectors", nargs="*", metavar="project_or_group")
 
         # Actually read the options.
-        args, unknown_args = parser.parse_known_args(options)  # unknown_args - Required to read non-option args
+        args, unknown_args = parser.parse_known_intermixed_args(options)
+
+        if unknown_args:
+            for unknown_arg in unknown_args:
+                logger_app.error(f" r[*] Unrecognized option was used: {unknown_arg}")
+            exit(1)
 
         # <editor-fold desc="arg functions">
         if args.show_info:
             self._show_info_and_exit()
         if args.version:
             self._show_version_and_exit()
-        if args.show_options_specifiers:
-            self._show_options_specifiers_and_exit()
-        if args.help:
-            self._show_help_and_exit()
         if args.self_update:
             found_options["self-update"] = True
             found_options["no-metadata"] = True  # Implied --no-metadata
@@ -209,9 +209,8 @@ class Cmdline:
             opts["run_mode"] = "install"
             phases.reset_to(["install"])
         if args.install_dir:
-            found_options["install-dir"] = args.install_dir[0]
             found_options["reconfigure"] = True
-        if args.query:
+        if args.query is not None:
             arg = args.query[0]
 
             valid_mode = re.compile(r"^[a-zA-Z0-9_#][a-zA-Z0-9_-]*$")
@@ -222,9 +221,7 @@ class Cmdline:
             found_options["query"] = arg
             found_options["pretend"] = True  # Implied pretend mode
             found_options["no-metadata"] = True  # Implied --no-metadata
-        if args.pretend:
-            found_options["pretend"] = True
-        if args.resume or args.resume_refresh_build_first:
+        if args.resume or args.R:
             found_options["resume"] = True
             phases.filter_out_phase("update")  # Implied --no-src
             found_options["no-metadata"] = True  # Implied --no-metadata
@@ -234,7 +231,6 @@ class Cmdline:
             # resume list requires such modules).
             found_options["include-dependencies"] = False
 
-        # Hack to set project options
         if args.set_project_option_value:
             for module, option, value in args.set_project_option_value:
                 if module and option:
@@ -247,25 +243,48 @@ class Cmdline:
 
         if args.ignore_projects:
             opts["ignore-projects"] = args.ignore_projects
+
+        if args.refresh_build:
+            # TODO: Remove after 12.12.2026
+            logger_app.warning(" y[*] r[--refresh-build] (r[-r]) is deprecated and will be removed in future release. Use g[--clean-build] (g[-c]) instead.")
+            found_options["clean-build"] = True
         # </editor-fold desc="arg functions">
 
         # handling flag options
-        for key in BuildContext().global_options_with_negatable_form.keys():
-            opt_name = key.replace("-", "_")
-            val = getattr(args, opt_name)
+        for optspec in OptionsSpec.global_options_with_negatable_form:
+            ns_name = optspec.name.replace("-", "_")
+            val = getattr(args, ns_name)
             if val is not None:
-                found_options[key] = val
+                found_options[optspec.name] = val
 
         # handling options with one argument
-        for key in BuildContext().global_options_with_parameter.keys():
-            opt_name = key.replace("-", "_")
-            val = getattr(args, opt_name)
-            if val:
-                found_options[key] = val[0]
+        for optspec in OptionsSpec.global_options_with_parameter:
+            ns_name = optspec.name.replace("-", "_")
+            val = getattr(args, ns_name)
+            if val is not None:
+                found_options[optspec.name] = val[0]
 
-        # Module selectors (i.e. an actual argument)
-        for unknown_arg in unknown_args:
-            opts["selectors"].append(unknown_arg)
+        for optspec in OptionsSpec.non_context_options_with_parameter:
+            ns_name = optspec.name.replace("-", "_")
+            val = getattr(args, ns_name)
+            if val is not None:
+                found_options[optspec.name] = val[0]
+
+        # handling options without arguments
+        for optspec in OptionsSpec.global_options_without_parameter:
+            ns_name = optspec.name.replace("-", "_")
+            val = getattr(args, ns_name)
+            if val:
+                found_options[optspec.name] = True
+
+        for optspec in OptionsSpec.non_context_options_without_parameter:
+            ns_name = optspec.name.replace("-", "_")
+            val = getattr(args, ns_name)
+            if val:
+                found_options[optspec.name] = True
+
+        if args.selectors:
+            opts["selectors"] = args.selectors
 
         # <editor-fold desc="all other args handlers">
         if args.all_config_projects:
@@ -274,144 +293,22 @@ class Cmdline:
         if args.all_kde_projects:
             opts["special-selectors"].append("all-kde-projects")
 
-        if args.build_system_only:
-            found_options["build-system-only"] = True
-
-        if args.colorful_output is not None:
-            found_options["colorful-output"] = args.colorful_output
-
-        if args.dependency_tree:
-            found_options["dependency-tree"] = True
-
-        if args.dependency_tree_fullpath:
-            found_options["dependency-tree-fullpath"] = True
-
-        if args.directory_layout is not None:
-            found_options["directory-layout"] = args.directory_layout[0]
-
-        if args.include_dependencies is not None:
-            found_options["include-dependencies"] = args.include_dependencies
-
-        if args.list_installed:
-            found_options["list-installed"] = True
-
-        if args.metadata_only:
-            found_options["metadata-only"] = True
-
-        if args.niceness != 10:
-            found_options["niceness"] = args.niceness
-
-        if args.no_metadata:
-            found_options["no-metadata"] = True
-
         if args.rc_file is not None:
             found_options["rc-file"] = args.rc_file[0]
 
-        if args.rebuild_failures:
-            found_options["rebuild-failures"] = True
-
-        if args.reconfigure:
-            found_options["reconfigure"] = True
-
-        if args.refresh_build:
-            found_options["refresh-build"] = True
-
-        if args.refresh_build_first or args.resume_refresh_build_first:
-            found_options["refresh-build-first"] = True
-
-        if args.resume_after is not None:
-            found_options["resume-after"] = args.resume_after[0]
-
-        if args.resume_from is not None:
-            found_options["resume-from"] = args.resume_from[0]
-
-        if args.revision is not None:
-            found_options["revision"] = args.revision[0]
-
-        if args.stop_after is not None:
-            found_options["stop-after"] = args.stop_after[0]
-
-        if args.stop_before is not None:
-            found_options["stop-before"] = args.stop_before[0]
-
-        if args.binpath is not None:
-            found_options["binpath"] = args.binpath[0]
-
-        if args.branch is not None:
-            found_options["branch"] = args.branch[0]
-
-        if args.branch_group is not None:
-            found_options["branch-group"] = args.branch_group[0]
-
-        if args.build_dir is not None:
-            found_options["build-dir"] = args.build_dir[0]
-
-        if args.cmake_generator is not None:
-            found_options["cmake-generator"] = args.cmake_generator[0]
-
-        if args.cmake_options is not None:
-            found_options["cmake-options"] = args.cmake_options[0]
-
-        if args.configure_flags is not None:
-            found_options["configure-flags"] = args.configure_flags[0]
-
-        if args.cxxflags is not None:
-            found_options["cxxflags"] = args.cxxflags[0]
-
-        if args.dest_dir is not None:
-            found_options["dest-dir"] = args.dest_dir[0]
+        if args.R:
+            found_options["clean-build-first"] = True
 
         if args.install_login_session_only:
             opts["run_mode"] = "install-login-session-only"
             phases.clear()
 
-        if args.libname is not None:
-            found_options["libname"] = args.libname[0]
-
-        if args.libpath is not None:
-            found_options["libpath"] = args.libpath[0]
-
-        if args.log_dir is not None:
-            found_options["log-dir"] = args.log_dir[0]
-
-        if args.make_install_prefix is not None:
-            found_options["make-install-prefix"] = args.make_install_prefix[0]
-
-        if args.make_options is not None:
-            found_options["make-options"] = args.make_options[0]
-
-        if args.meson_options is not None:
-            found_options["meson-options"] = args.meson_options[0]
-
-        if args.ninja_options is not None:
-            found_options["ninja-options"] = args.ninja_options[0]
-
-        if args.num_cores is not None:
-            found_options["num-cores"] = args.num_cores[0]
-
-        if args.num_cores_low_mem is not None:
-            found_options["num-cores-low-mem"] = args.num_cores_low_mem[0]
-
-        if args.override_build_system is not None:
-            found_options["override-build-system"] = args.override_build_system[0]
-
-        if args.persistent_data_file is not None:
-            found_options["persistent-data-file"] = args.persistent_data_file[0]
-
-        if args.qmake_options is not None:
-            found_options["qmake-options"] = args.qmake_options[0]
-
-        if args.qt_install_dir is not None:
-            found_options["qt-install-dir"] = args.qt_install_dir[0]
-
-        if args.remove_after_install is not None:
-            found_options["remove-after-install"] = args.remove_after_install[0]
-
-        if args.source_dir is not None:
-            found_options["source-dir"] = args.source_dir[0]
-
-        if args.tag is not None:
-            found_options["tag"] = args.tag[0]
+        if args.start_program is not None:
+            if not args.start_program:  # check this here, because later the empty list will be treated as not wanting to start program
+                logger_app.error("You need to specify a project binary with the --run option")
+                exit(1)  # Do not continue
+            found_options["no-metadata"] = True  # Implied --no-metadata
+            opts["start-program"] = args.start_program
 
         # </editor-fold desc="all other args handlers">
 
@@ -426,18 +323,6 @@ class Cmdline:
         exit()
 
     @staticmethod
-    def _show_help_and_exit() -> NoReturn:
-        print(dedent("""
-            KDE Builder tool automates the download, build, and install process for KDE software using the latest available source code.
-
-            Documentation: https://kde-builder.kde.org
-                Supported command-line parameters:              https://kde-builder.kde.org/en/cmdline/supported-cmdline-params.html
-                Table of available configuration options:       https://kde-builder.kde.org/en/configuration/conf-options-table.html
-
-            """))
-        exit()
-
-    @staticmethod
     def _show_info_and_exit() -> NoReturn:
         os_vendor = OSSupport().ID
         version = "kde-builder " + Version.script_version()
@@ -446,103 +331,3 @@ class Cmdline:
             OS: {os_vendor}
             """))
         exit()
-
-    @staticmethod
-    def _show_options_specifiers_and_exit() -> NoReturn:
-        supported_options = Cmdline._supported_options()
-
-        # The initial setup options are handled outside the Cmdline (in the starting script).
-        initial_options = ["initial-setup", "install-distro-packages", "generate-config"]
-
-        for option in [*supported_options, *initial_options, "debug"]:
-            print(option)
-
-        exit()
-
-    phase_changing_options = [
-        "build-only",
-        "install-only",
-        "no-build",
-        "no-install",
-        "no-src|S",
-        "src-only|s",
-        "uninstall",
-    ]
-
-    @staticmethod
-    def _supported_options() -> list[str]:
-        """
-        Return option names ready to be fed into GetOptionsFromArray.
-        """
-        # See https://perldoc.perl.org/5.005/Getopt::Long for options specification format
-
-        non_context_options = [
-            "all-config-projects",
-            "all-kde-projects",
-            "dependency-tree",
-            "dependency-tree-fullpath",
-            "help|h",
-            "install-login-session-only",
-            "list-installed",
-            "no-metadata|M",
-            "query=s",
-            "rc-file=s",
-            "rebuild-failures",
-            "resume",
-            "resume-after|after|a=s",
-            "resume-from|from|f=s",
-            "resume-refresh-build-first|R",
-            "self-update",
-            "set-project-option-value=s",
-            "show-info",
-            "show-options-specifiers",
-            "stop-after|to=s",
-            "stop-before|until=s",
-            "version|v",
-        ]
-
-        context_options_with_extra_specifier = [
-            "colorful-output|color!",
-            "ignore-projects|!=s{,}",
-            "niceness|nice:10",
-            "pretend|dry-run|p",
-            "refresh-build|r",
-            "target=s@",
-        ]
-
-        options_converted_to_canonical = [
-            "d",  # --include-dependencies, which is already pulled in via `BuildContext` default Global Flags
-            "D",  # --no-include-dependencies, which is already pulled in via `BuildContext` default Global Flags
-        ]
-
-        # For now, place the options we specified above
-        options = [*non_context_options, *Cmdline.phase_changing_options, *context_options_with_extra_specifier, *options_converted_to_canonical]
-
-        # Remove stuff like ! and =s from list above;
-        opt_names = [re.search(r"([a-zA-Z-]+)", option).group(1) for option in options]
-
-        # Make sure this doesn't overlap with BuildContext default flags and options
-        opts_seen = {optName: 1 for optName in opt_names}
-
-        for key in BuildContext().global_options_with_negatable_form:
-            opts_seen[key] = opts_seen.get(key, 0) + 1
-
-        for key in BuildContext().global_options_with_parameter:
-            opts_seen[key] = opts_seen.get(key, 0) + 1
-
-        for key in BuildContext().global_options_without_parameter:
-            opts_seen[key] = opts_seen.get(key, 0) + 1
-
-        violators = [key for key, value in opts_seen.items() if value > 1]
-        if violators:
-            errmsg = "The following options overlap in Cmdline: [" + ", ".join(violators) + "]!"
-            raise Exception(errmsg)
-
-        # Now, place the rest of the options, that have specifier dependent on group
-        options.extend([
-            *[f"{key}!" for key in BuildContext().global_options_with_negatable_form],
-            *[f"{key}=s" for key in BuildContext().global_options_with_parameter],
-            *[f"{key}" for key in BuildContext().global_options_without_parameter]
-        ])
-
-        return options
