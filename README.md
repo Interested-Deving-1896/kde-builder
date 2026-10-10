@@ -62,6 +62,7 @@ Direct commits to OSP or OOC are detected and opened as PRs back to `Interested-
 | [@Merrit](https://github.com/Merrit) | 4 |
 | [@optimusprimeg](https://github.com/optimusprimeg) | 2 |
 | [@tarcisiofischer](https://github.com/tarcisiofischer) | 2 |
+| [@Justinzobel](https://github.com/Justinzobel) | 1 |
 | [@shocklateboy92](https://github.com/shocklateboy92) | 1 |
 | [@Begasus](https://github.com/Begasus) | 1 |
 | [@purinchu](https://github.com/purinchu) | 1 |
@@ -73,8 +74,8 @@ Direct commits to OSP or OOC are detected and opened as PRs back to `Interested-
 | [@fanzhuyifan](https://github.com/fanzhuyifan) | 1 |
 | [@shenlebantongying](https://github.com/shenlebantongying) | 1 |
 | [@usta](https://github.com/usta) | 1 |
-| [@Justinzobel](https://github.com/Justinzobel) | 1 |
 | [@JoelleJS](https://github.com/JoelleJS) | 1 |
+| [@Interested-Deving-1896](https://github.com/Interested-Deving-1896) | 1 |
 | [@hsitter](https://github.com/hsitter) | 1 |
 | [@hexchain](https://github.com/hexchain) | 1 |
 | [@HanYoung-uwu](https://github.com/HanYoung-uwu) | 1 |
