@@ -76,6 +76,7 @@ Direct commits to OSP or OOC are detected and opened as PRs back to `Interested-
 | [@usta](https://github.com/usta) | 1 |
 | [@Justinzobel](https://github.com/Justinzobel) | 1 |
 | [@JoelleJS](https://github.com/JoelleJS) | 1 |
+| [@Interested-Deving-1896](https://github.com/Interested-Deving-1896) | 1 |
 | [@hsitter](https://github.com/hsitter) | 1 |
 | [@hexchain](https://github.com/hexchain) | 1 |
 | [@HanYoung-uwu](https://github.com/HanYoung-uwu) | 1 |
@@ -84,7 +85,6 @@ Direct commits to OSP or OOC are detected and opened as PRs back to `Interested-
 | [@bjdm](https://github.com/bjdm) | 1 |
 | [@breakingspell](https://github.com/breakingspell) | 1 |
 | [@uriesk](https://github.com/uriesk) | 1 |
-| [@scatterfish](https://github.com/scatterfish) | 1 |
 <!-- AI:end:contributors -->
 
 ## Origins
