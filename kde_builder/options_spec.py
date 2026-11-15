@@ -110,7 +110,6 @@ class OptionsSpec:
     global_options_with_negatable_form = [
         Option(name="async", default=True, help="Perform source update and build process in parallel"),
         Option(name="check-self-updates", default=True, help="Show a message when kde-builder detects it is outdated"),
-        Option(name="colorful-output", aliases=["color"], default=True, help="Toggle colorful output"),
         Option(name="compile-commands-export", default=True, help="Generation of a compile_commands.json"),
         Option(name="compile-commands-linking", default=True, help="Creation of symbolic links from compile_commands.json to source directory"),
         Option(name="generate-clion-project-config", default=False, help="Generate a clion project config"),
