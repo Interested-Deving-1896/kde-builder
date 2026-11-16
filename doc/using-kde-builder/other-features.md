@@ -46,14 +46,14 @@ When being run from Konsole or a different terminal, kde-builder will
 normally display with colorized text.
 
 You can disable this by using the `--no-color` on the command line, or
-by setting the [colorful-output](#conf-colorful-output) option in the
+by setting the [color](#conf-color) option in the
 [configuration file](../getting-started/configure-data) to `false`.
 
 Disabling color output in the configuration file:
 
 ```yaml
 global:
-  colorful-output: false
+  color: false
 ```
 
 (deleting-build-dir)=

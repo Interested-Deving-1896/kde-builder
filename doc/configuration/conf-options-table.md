@@ -38,8 +38,8 @@ If it is, the warning message will be shown in the terminal.
 
 Related command-line option: [--check-self-updates](#cmdline-check-self-updates).
 
-(conf-colorful-output)=
-[`colorful-output`](conf-colorful-output)
+(conf-color)=
+[`color`](conf-color)
 
 Type: Boolean, Default value: True
 

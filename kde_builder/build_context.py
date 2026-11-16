@@ -488,7 +488,7 @@ class BuildContext(PathResolvingOptions):
         super().set_option(opt_name, opt_val)
 
         # Automatically respond to various global option changes.
-        if opt_name == "colorful-output":
+        if opt_name == "color":
             force_colors(opt_val)
         elif opt_name == "pretend":
             kde_builder.is_pretending = opt_val
